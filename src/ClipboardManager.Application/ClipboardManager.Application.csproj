@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<!-- CAMBIO AQUÍ -->
+
+	<PropertyGroup>
+		<TargetFramework>net9.0-windows</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UseWPF>true</UseWPF>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Estas referencias NuGet están bien -->
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<!-- Asegúrate que la versión es compatible o usa la recomendada como 8.2.2 si tienes problemas -->
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.4" />
+		<!-- O usa la 8.0.0 si usas .NET 8 -->
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Esta referencia de proyecto está bien -->
+		<ProjectReference Include="..\ClipboardManager.Core\ClipboardManager.Core.csproj" />
+	</ItemGroup>
+
+</Project>
