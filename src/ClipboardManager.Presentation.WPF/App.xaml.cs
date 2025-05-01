@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 using Hardcodet.Wpf.TaskbarNotification; // Para Tray Icon
 
+
 namespace ClipboardManager.Presentation.WPF;
 
 public partial class App : System.Windows.Application
