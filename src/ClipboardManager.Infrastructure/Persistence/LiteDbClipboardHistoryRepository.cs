@@ -1,7 +1,10 @@
 using ClipboardManager.Application.Interfaces;
 using ClipboardManager.Core.Entities;
 using LiteDB;
-using Microsoft.Extensions.Options; // Para configuración de path DB
+using ClipboardManager.Core.Enums;
+using Microsoft.Extensions.Options;
+using System.IO; // <--- AÑADE ESTA LÍNEA (para Path y Directory)
+using System.Linq; // <--- AÑADE ESTA LÍNEA (para ThenByDescending, Skip, etc.)
 
 namespace ClipboardManager.Infrastructure.Persistence;
 
@@ -40,33 +43,44 @@ public class LiteDbClipboardHistoryRepository : IClipboardHistoryRepository, IDi
         return Task.CompletedTask; // LiteDB es síncrono en su mayoría, envolver si se necesita async real
     }
 
+    // Método para obtener items con paginación y filtrado
+    // POR FAVOR, esto no es tan eficiente y necesita se mejorado ya que nos estamos trayendo todos los elementos que coinciden con los filtros a la memoria y esto 
+    // puede ser un problema si la base de datos crece mucho. Y LO HARA!!
     public Task<IEnumerable<ClipboardItem>> GetItemsAsync(int limit = 50, int offset = 0, string? searchQuery = null, ContentType? filterType = null)
     {
-        var query = _collection.Query();
+        var query = _collection.Query(); // ILiteQueryable<ClipboardItem>
 
         if (filterType.HasValue)
         {
-            query = query.Where(x => x.ContentType == filterType.Value);
+            query = query.Where(x => x.ContentType == filterType.Value); // Still ILiteQueryable
         }
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
         {
             // Búsqueda simple (mejorar con índices o full-text si es posible)
             query = query.Where(x => (x.Data != null && x.Data.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
-                                     (x.Preview != null && x.Preview.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)));
+                                     (x.Preview != null && x.Preview.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))); // Still ILiteQueryable
         }
 
-        // Ordenar: Anclados primero, luego por fecha descendente
-        var results = query.OrderByDescending(x => x.IsPinned)
-                           .ThenByDescending(x => x.Timestamp)
-                           .Skip(offset)
-                           .Limit(limit)
-                           .ToEnumerable();
+        // *** INICIO DE LA CORRECCIÓN ***
 
-        return Task.FromResult(results);
+        // 1. Ejecuta la consulta filtrada de LiteDB y trae los resultados a memoria
+        var filteredItems = query.ToEnumerable(); // Ahora es IEnumerable<ClipboardItem>
+
+        // 2. Aplica el ordenamiento y paginación EN MEMORIA usando LINQ estándar
+        var results = filteredItems
+                           .OrderByDescending(x => x.IsPinned) // LINQ OrderByDescending
+                           .ThenByDescending(x => x.Timestamp)  // LINQ ThenByDescending (¡Ahora funciona!)
+                           .Skip(offset)                      // LINQ Skip
+                           .Take(limit);                       // LINQ Take (en lugar de Limit)
+
+        // *** FIN DE LA CORRECCIÓN ***
+
+        // 3. Devuelve el resultado final envuelto en una Task completada
+        return Task.FromResult(results); // results es IEnumerable<ClipboardItem>, Task.FromResult lo convierte en Task<IEnumerable<ClipboardItem>>
     }
 
-     public Task UpdateItemAsync(ClipboardItem item)
+    public Task UpdateItemAsync(ClipboardItem item)
     {
         _collection.Update(item);
         return Task.CompletedTask;
@@ -90,7 +104,7 @@ public class LiteDbClipboardHistoryRepository : IClipboardHistoryRepository, IDi
         return Task.CompletedTask;
     }
 
-     public Task ClearHistoryAsync(DateTimeOffset olderThan)
+    public Task ClearHistoryAsync(DateTimeOffset olderThan)
     {
         // Borrar items no anclados más viejos que la fecha especificada
        _collection.DeleteMany(x => !x.IsPinned && x.Timestamp < olderThan);

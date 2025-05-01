@@ -43,17 +43,7 @@
             </TextBlock>
         </StackPanel>
 
-        <!-- Botón de Anclar -->
-        <Button Grid.Column="2"
-                Style="{StaticResource MaterialDesignFlatButton}" <!-- Estilo opcional -->
-                Command="{Binding PinItemCommand}"
-                ToolTip="{Binding PinButtonText}"
-                VerticalAlignment="Top" Margin="5,0,0,0">
-                <!-- Usar Icono para Pin -->
-                 <TextBlock FontFamily="Segoe MDL2 Assets"
-                            Text="{Binding IsPinned, Converter={StaticResource BooleanToPinIconConverter}}" />
-                            <!-- Necesitas BooleanToPinIconConverter -->
-        </Button>
+        
 
     </Grid>
 </UserControl>

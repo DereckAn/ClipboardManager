@@ -1,6 +1,7 @@
 using ClipboardManager.Application.Interfaces;
 using ClipboardManager.Core.Entities;
 using ClipboardManager.Core.Enums;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows; // Necesario para Clipboard y formatos
 using System.Windows.Interop; // Para HwndSource
@@ -45,12 +46,12 @@ public class WindowsClipboardMonitorService : IClipboardMonitorService, IDisposa
         if (_isMonitoring) return;
 
         // Asegurarse de que esto se ejecuta en el hilo de UI o uno con MessageLoop (STA)
-        Application.Current.Dispatcher.Invoke(() => {
+        System.Windows.Application.Current.Dispatcher.Invoke(() => {
             if (_hwndSource == null)
             {
                 // Necesitamos obtener el HWND de la ventana principal o crear uno invisible
-                 // Obtener handle de la ventana principal (si existe)
-                Window? mainWindow = Application.Current.MainWindow;
+                // Obtener handle de la ventana principal (si existe)
+                Window? mainWindow = System.Windows.Application.Current.MainWindow;
                 IntPtr windowHandle = IntPtr.Zero;
                 if (mainWindow != null) {
                      windowHandle = new WindowInteropHelper(mainWindow).EnsureHandle();
@@ -93,7 +94,7 @@ public class WindowsClipboardMonitorService : IClipboardMonitorService, IDisposa
     {
          if (!_isMonitoring || _hwndSource == null || _hwndSource.IsDisposed) return;
 
-         Application.Current.Dispatcher.Invoke(() => {
+        System.Windows.Application.Current.Dispatcher.Invoke(() => {
              if (_hwndSource != null && !_hwndSource.IsDisposed) {
                 RemoveClipboardFormatListener(_hwndSource.Handle);
                 _hwndSource.RemoveHook(WndProc);
@@ -125,7 +126,7 @@ public class WindowsClipboardMonitorService : IClipboardMonitorService, IDisposa
         try
         {
             // Ejecutar en hilo STA si no estamos seguros del contexto actual
-             await Application.Current.Dispatcher.InvokeAsync(async () =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
              {
                  if (Clipboard.ContainsText())
                  {
