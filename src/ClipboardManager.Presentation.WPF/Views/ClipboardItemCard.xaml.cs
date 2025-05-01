@@ -1,4 +1,5 @@
 using ClipboardManager.Application.ViewModels;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
