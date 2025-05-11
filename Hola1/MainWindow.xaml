@@ -13,54 +13,168 @@
         Background="#AA000000"
         AllowsTransparency="True"
         WindowStyle="None"
-        TextElement.Foreground="White" 
-        MouseLeftButtonDown="Window_MouseLeftButtonDown" 
-    >
+        TextElement.Foreground="White"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-    
-    
+    <Window.Resources>
+        <!-- Estilo para el Thumb (la parte que se arrastra) de la ScrollBar -->
+        <Style x:Key="TransparentScrollBarThumbStyle" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border x:Name="thumbBorder"
+                                Background="#66FFFFFF" 
+                            CornerRadius="3"
+                                BorderBrush="#33FFFFFF"
+                            
+                            BorderThickness="0"/>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="thumbBorder" Property="Background" Value="#99FFFFFF"/>
+                                    <!-- Más opaco al pasar el mouse -->
+                                </Trigger>
+                                <Trigger Property="IsDragging" Value="True">
+                                    <Setter TargetName="thumbBorder" Property="Background" Value="#BBFFFFFF"/>
+                                    <!-- Más opaco al arrastrar -->
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Estilo para los botones de repetir (flechas), los ocultamos -->
+        <Style x:Key="ScrollBarLineButton" TargetType="{x:Type RepeatButton}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Border Background="Transparent"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Estilo completo para la ScrollBar Horizontal -->
+        <Style x:Key="TransparentHorizontalScrollBarStyle" TargetType="{x:Type ScrollBar}">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false"/>
+            <Setter Property="Stylus.IsFlicksEnabled" Value="false"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <!-- Fondo de la pista transparente inicialmente -->
+            <Setter Property="Margin" Value="0,0,0,2"/>
+            <!-- Pequeño margen inferior -->
+            <Setter Property="Height" Value="8"/>
+            <!-- Altura más delgada para la barra de scroll -->
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="Bg" SnapsToDevicePixels="true" Background="Transparent">
+                            <!-- La pista solo aparece si el mouse está sobre la scrollbar o el ListBox -->
+                            <Border x:Name="TrackBackground" Background="#11FFFFFF" CornerRadius="4" Opacity="0"/>
+                            <Track x:Name="PART_Track" IsDirectionReversed="False">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource ScrollBarLineButton}" Command="{x:Static ScrollBar.LineLeftCommand}" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource ScrollBarLineButton}" Command="{x:Static ScrollBar.LineRightCommand}" />
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource TransparentScrollBarThumbStyle}" />
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <!-- Hacer visible y ligeramente opaco el fondo del track cuando el mouse está sobre el ListBox o la propia ScrollBar -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBox}}" Value="True"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="TrackBackground" Property="Opacity" Value="1"/>
+                                <Setter TargetName="PART_Track" Property="IsEnabled" Value="True"/>
+                                <!-- Asegura que el thumb sea visible -->
+                            </MultiDataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TrackBackground" Property="Opacity" Value="1"/>
+                                <Setter TargetName="PART_Track" Property="IsEnabled" Value="True"/>
+                            </Trigger>
+                            <!-- Cuando no hay mouse over, el thumb se oculta (IsEnabled=false en Track) y el fondo del track es transparente -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBox}}" Value="False"/>
+                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="False"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="TrackBackground" Property="Opacity" Value="0"/>
+                                <Setter TargetName="PART_Track" Property="IsEnabled" Value="False"/>
+                            </MultiDataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
     <Border BorderBrush="#55FFFFFF" BorderThickness="1" CornerRadius="5" Margin="5">
-       
         <StackPanel Margin="10">
-
-            
             <Label Content="Historial del Portapapeles:" FontWeight="Bold" Margin="0,0,0,5" Foreground="White"/>
 
             <ListBox x:Name="HistoryListBox"
-                     Background="Transparent"  
-                BorderThickness="0"
-                              Height="380"
-               
-                Visibility="Visible"
-                     HorizontalAlignment="Stretch"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Height="380"
                      ItemsSource="{Binding ClipboardHistoryUI}"
                      SelectionChanged="HistoryListBox_SelectionChanged"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-              
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                <ListBox.Resources>
+                    <!-- Aplicar el estilo SÓLO a las ScrollBars horizontales de este ListBox -->
+                    <Style TargetType="ScrollBar" BasedOn="{StaticResource TransparentHorizontalScrollBarStyle}">
+                        <Style.Triggers>
+                            <Trigger Property="Orientation" Value="Vertical">
+                                <!-- Si por alguna razón apareciera una vertical, la ocultamos completamente -->
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.Resources>
+
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <!-- NUEVO: Border alrededor de cada item para darle fondo blanco -->
-                        <Border Background="White" CornerRadius="3" Margin="2" Padding="5" MinHeight="30">
+                        <Border Background="White"
+                                CornerRadius="5"
+                                Margin="5"
+                                Padding="10"
+                                MaxWidth="400"
+                                MinHeight="50"
+                                VerticalAlignment="Stretch">
                             <TextBlock Text="{Binding}"
                                        TextWrapping="Wrap"
-                                       Foreground="Black" 
+                                       Foreground="Black"
                                        VerticalAlignment="Center"/>
-                                       
                         </Border>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
-                <!-- Opcional: Para quitar el efecto de selección azul por defecto si no te gusta con la transparencia -->
+
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
+                        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListBoxItem">
-                                    <ContentPresenter />
+                                    <ContentPresenter VerticalAlignment="Stretch"/>
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
-                        <!-- Para un feedback visual al pasar el mouse o seleccionar, puedes añadir Triggers aquí -->
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Effect">
