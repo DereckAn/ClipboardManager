@@ -8,13 +8,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Forms; // Para NotifyIcon
-using System.Drawing;       // Para Icon
+using System.Windows.Media;      // NUEVO: Para VisualTreeHelper
+using System.Windows.Forms;     // Para NotifyIcon
+using System.Drawing;           // Para Icon
 
 namespace BasicClipboardApp
 {
     public partial class MainWindow : Window
     {
+        // --- Constantes y API de Windows ---
         private const int WM_CLIPBOARDUPDATE = 0x031D;
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -24,27 +26,36 @@ namespace BasicClipboardApp
         private static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
         private IntPtr windowHandle;
 
+        // --- Propiedades y Colección ---
         public ObservableCollection<string> ClipboardHistoryUI { get; set; }
         private const int MaxHistoryItemsInUI = 50;
 
+        // --- NotifyIcon y Control de Salida ---
         private NotifyIcon trayIcon;
         private bool isExiting = false;
-        private bool blockNextClipboardUpdateProcessing = false; // Bandera para controlar el procesamiento
+        private bool blockNextClipboardUpdateProcessing = false;
 
         public MainWindow()
         {
             InitializeComponent();
+
             ClipboardHistoryUI = new ObservableCollection<string>();
             this.DataContext = this;
+
             InitializeDatabase();
             LoadHistoryFromDb();
             InitializeTrayIcon();
+
             this.IsVisibleChanged += MainWindow_IsVisibleChanged;
+
+            // NUEVO: Suscribirse al evento PreviewMouseWheel del ListBox
+            HistoryListBox.PreviewMouseWheel += HistoryListBox_PreviewMouseWheel;
         }
 
+        // --- Inicialización ---
         private void InitializeDatabase()
         {
-            using (var dbCtx = new AppDbContext())
+            using (var dbCtx = new AppDbContext()) // Asumiendo AppDbContext.cs
             {
                 dbCtx.Database.EnsureCreated();
             }
@@ -71,6 +82,7 @@ namespace BasicClipboardApp
             trayIcon.ContextMenuStrip = contextMenu;
         }
 
+        // --- Lógica de la Ventana (Visibilidad, Posicionamiento, Cierre) ---
         private void MainWindow_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue) PositionWindowAtBottomAndFullWidth();
@@ -115,14 +127,19 @@ namespace BasicClipboardApp
         }
 
         private void Window_StateChanged(object sender, EventArgs e) { /* Opcional: if (this.WindowState == WindowState.Minimized && this.IsVisible) this.Hide(); */ }
-        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (e.ButtonState == MouseButtonState.Pressed) this.DragMove(); }
 
+        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == MouseButtonState.Pressed) this.DragMove();
+        }
+
+        // --- Lógica del Portapapeles y Base de Datos ---
         private void LoadHistoryFromDb()
         {
             ClipboardHistoryUI.Clear();
             try
             {
-                using (var dbCtx = new AppDbContext())
+                using (var dbCtx = new AppDbContext()) // Asumiendo AppDbContext.cs
                 {
                     var itemsFromDb = dbCtx.ClipboardHistoryItems.OrderByDescending(item => item.Timestamp).Take(MaxHistoryItemsInUI).ToList();
                     foreach (var dbItem in itemsFromDb.AsEnumerable().Reverse())
@@ -149,51 +166,41 @@ namespace BasicClipboardApp
         {
             if (msg == WM_CLIPBOARDUPDATE)
             {
-                // Procesar el cambio del clipboard en el hilo de UI usando Dispatcher
                 Dispatcher.Invoke(() =>
                 {
                     if (blockNextClipboardUpdateProcessing)
                     {
-                        blockNextClipboardUpdateProcessing = false; // Resetear la bandera
-                        return; // Saltar este procesamiento porque fue iniciado por la propia app
+                        blockNextClipboardUpdateProcessing = false;
+                        return;
                     }
-                    ProcessClipboardChange(); // Nuevo método para encapsular la lógica
+                    ProcessClipboardChange();
                 });
                 handled = true;
             }
             return IntPtr.Zero;
         }
 
-        // Nuevo método para procesar el cambio del clipboard
         private void ProcessClipboardChange()
         {
             try
             {
                 if (!System.Windows.Clipboard.ContainsText()) return;
-
                 string currentText = System.Windows.Clipboard.GetText();
                 if (string.IsNullOrWhiteSpace(currentText)) return;
 
-                using (var dbCtx = new AppDbContext())
+                using (var dbCtx = new AppDbContext()) // Asumiendo AppDbContext.cs
                 {
-                    var existingItem = dbCtx.ClipboardHistoryItems
-                                          .FirstOrDefault(item => item.DataType == "Text" && item.TextContent == currentText);
-
-                    if (existingItem != null) // El ítem ya existe en la BD
+                    var existingItem = dbCtx.ClipboardHistoryItems.FirstOrDefault(item => item.DataType == "Text" && item.TextContent == currentText);
+                    if (existingItem != null)
                     {
-                        existingItem.Timestamp = DateTime.UtcNow; // Actualizar timestamp para moverlo al "frente"
+                        existingItem.Timestamp = DateTime.UtcNow;
                         dbCtx.SaveChanges();
-
-                        // Actualizar UI: remover y reinsertar al principio
-                        if (ClipboardHistoryUI.Contains(currentText))
-                        {
-                            ClipboardHistoryUI.Remove(currentText);
-                        }
+                        if (ClipboardHistoryUI.Contains(currentText)) ClipboardHistoryUI.Remove(currentText);
                         ClipboardHistoryUI.Insert(0, currentText);
                     }
-                    else // El ítem es nuevo
+                    else
                     {
-                        var newItem = new ClipboardItem
+                        var newItem = new ClipboardItem // Asumiendo ClipboardItem.cs
                         {
                             Timestamp = DateTime.UtcNow,
                             DataType = "Text",
@@ -201,23 +208,14 @@ namespace BasicClipboardApp
                         };
                         dbCtx.ClipboardHistoryItems.Add(newItem);
                         dbCtx.SaveChanges();
-
                         ClipboardHistoryUI.Insert(0, currentText);
-                        if (ClipboardHistoryUI.Count > MaxHistoryItemsInUI)
-                        {
-                            ClipboardHistoryUI.RemoveAt(ClipboardHistoryUI.Count - 1);
-                        }
+                        if (ClipboardHistoryUI.Count > MaxHistoryItemsInUI) ClipboardHistoryUI.RemoveAt(ClipboardHistoryUI.Count - 1);
                     }
                 }
             }
             catch (COMException comEx) { Console.WriteLine($"Advertencia Clipboard: {comEx.Message}"); }
-            catch (Exception ex) { Console.WriteLine($"Error al procesar cambio de clipboard: {ex.Message}"); }
+            catch (Exception ex) { Console.WriteLine($"Error al procesar clipboard: {ex.Message}"); }
         }
-
-
-        // Anterior UpdateClipboardHistoryToDb() renombrado y modificado
-        // Este método ya no se llama directamente desde WndProc, sino ProcessClipboardChange
-        // Se mantiene la lógica pero ahora no tiene la bandera.
 
         private void HistoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -225,19 +223,9 @@ namespace BasicClipboardApp
             {
                 try
                 {
-                    // 1. Marcar que el próximo cambio del clipboard NO debe ser procesado como una nueva entrada
                     blockNextClipboardUpdateProcessing = true;
-
-                    // 2. Poner el texto seleccionado en el portapapeles del sistema
                     System.Windows.Clipboard.SetText(selectedText);
-                    // Esto disparará WM_CLIPBOARDUPDATE, que llamará a WndProc -> ProcessClipboardChange.
-                    // Pero como blockNextClipboardUpdateProcessing es true, se ignorará.
-
-                    // 3. Forzar explícitamente la lógica de "mover al frente" para este ítem
-                    //    Esto asegura que el ítem seleccionado se mueva al frente inmediatamente
-                    //    en la BD y en la UI, independientemente del listener del clipboard.
-                    MoveItemToFront(selectedText);
-
+                    MoveItemToFront(selectedText); // Mover al frente inmediatamente
 
                     Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
                     System.Threading.Tasks.Task.Delay(100).ContinueWith(_ => Dispatcher.Invoke(() => Mouse.OverrideCursor = null));
@@ -245,66 +233,90 @@ namespace BasicClipboardApp
                 catch (Exception ex)
                 {
                     System.Windows.MessageBox.Show($"Error al copiar/mover ítem: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    blockNextClipboardUpdateProcessing = false; // Resetear en caso de error
+                    blockNextClipboardUpdateProcessing = false;
                 }
-                finally
-                {
-                    // Deseleccionar para permitir re-clic si es necesario y evitar bucles si la lógica no es perfecta.
-                    if (HistoryListBox.SelectedItem != null)
-                    {
-                        // Esto puede volver a disparar SelectionChanged con e.AddedItems.Count == 0, por eso la comprobación al inicio.
-                        // HistoryListBox.SelectedItem = null; 
-                        // Si quieres mantenerlo seleccionado, comenta la línea de arriba.
-                        // Para evitar problemas, es mejor no deseleccionar automáticamente aquí o manejarlo con cuidado.
-                    }
-                }
+                // No deseleccionar automáticamente para evitar problemas con re-selección o bucles
             }
         }
 
-        // NUEVO: Método para mover un ítem existente al frente (BD y UI)
         private void MoveItemToFront(string textContent)
         {
             if (string.IsNullOrWhiteSpace(textContent)) return;
-
             try
             {
-                using (var dbCtx = new AppDbContext())
+                using (var dbCtx = new AppDbContext()) // Asumiendo AppDbContext.cs
                 {
-                    var existingItem = dbCtx.ClipboardHistoryItems
-                                          .FirstOrDefault(item => item.DataType == "Text" && item.TextContent == textContent);
-
+                    var existingItem = dbCtx.ClipboardHistoryItems.FirstOrDefault(item => item.DataType == "Text" && item.TextContent == textContent);
                     if (existingItem != null)
                     {
-                        existingItem.Timestamp = DateTime.UtcNow; // Actualizar timestamp
+                        existingItem.Timestamp = DateTime.UtcNow;
                         dbCtx.SaveChanges();
-
-                        // Actualizar UI
-                        if (ClipboardHistoryUI.Contains(textContent))
-                        {
-                            ClipboardHistoryUI.Remove(textContent);
-                        }
+                        if (ClipboardHistoryUI.Contains(textContent)) ClipboardHistoryUI.Remove(textContent);
                         ClipboardHistoryUI.Insert(0, textContent);
-
-                        // Opcional: Asegurar que el ítem se vea y esté seleccionado si el ListBox lo permite
-                        // HistoryListBox.SelectedItem = textContent;
-                        // HistoryListBox.ScrollIntoView(textContent);
                     }
-                    // Si no existe, no hacemos nada aquí, ya que esto es para mover uno existente.
-                    // La lógica de añadir nuevos está en ProcessClipboardChange.
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) { Console.WriteLine($"Error al mover ítem al frente: {ex.Message}"); }
+        }
+
+        // --- NUEVO: Manejador para el scroll horizontal con la rueda del mouse ---
+        private void HistoryListBox_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Primero, intentar obtener el ScrollViewer interno del ListBox
+            ScrollViewer? scrollViewer = FindVisualChild<ScrollViewer>(HistoryListBox);
+
+            if (scrollViewer != null)
             {
-                Console.WriteLine($"Error al mover ítem al frente: {ex.Message}");
+                // Determinar si el scroll horizontal es posible
+                if (scrollViewer.ScrollableWidth > 0)
+                {
+                    double scrollAmount = 48; // Cantidad de scroll, ajustar según preferencia (equivalente a 3 líneas de texto por defecto)
+                                              // O usar un multiplicador de e.Delta si se prefiere
+                                              // double scrollAmount = Math.Abs(e.Delta / (double)Mouse.MouseWheelDeltaForOneLine) * 16.0; // 16 es el alto de línea por defecto
+
+                    if (e.Delta < 0) // Rueda hacia abajo/atrás -> scroll a la derecha
+                    {
+                        scrollViewer.ScrollToHorizontalOffset(scrollViewer.HorizontalOffset + scrollAmount);
+                    }
+                    else if (e.Delta > 0) // Rueda hacia arriba/adelante -> scroll a la izquierda
+                    {
+                        scrollViewer.ScrollToHorizontalOffset(scrollViewer.HorizontalOffset - scrollAmount);
+                    }
+                    e.Handled = true; // Marcar el evento como manejado para evitar el scroll vertical
+                }
+                // Si ScrollableWidth es 0, no hay nada que scrollear horizontalmente, dejar que el evento siga (o no hacer nada)
             }
         }
 
+        // --- NUEVO: Función auxiliar para encontrar un hijo visual ---
+        public static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null) return null;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t)
+                {
+                    return t;
+                }
+                else
+                {
+                    T? childOfChild = FindVisualChild<T>(child);
+                    if (childOfChild != null)
+                    {
+                        return childOfChild;
+                    }
+                }
+            }
+            return null;
+        }
 
+        // Opcional: Método para limpiar ítems antiguos de la base de datos
         private void CleanupOldDbItems(TimeSpan retentionPeriod)
         {
             try
             {
-                using (var dbCtx = new AppDbContext())
+                using (var dbCtx = new AppDbContext()) // Asumiendo AppDbContext.cs
                 {
                     var cutoffDate = DateTime.UtcNow.Subtract(retentionPeriod);
                     var itemsToDelete = dbCtx.ClipboardHistoryItems.Where(item => item.Timestamp < cutoffDate);
