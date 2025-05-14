@@ -1,0 +1,25 @@
+<!-- Views/MainWindow.xaml -->
+<Window
+    x:Class="clipboard_winui3.Views.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:clipboard_winui3.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <!-- 
+        Background: Semi-transparente y oscuro.
+        #A0000000 -> A0 es el canal alfa (00 = transparente, FF = opaco), 000000 es negro.
+        Puedes ajustar A0 (ej. 80, C0) para más o menos transparencia.
+        Puedes ajustar 000000 (ej. 202020) para un gris oscuro en lugar de negro puro.
+    -->
+    <Grid Background="#A0202020">
+        <TextBlock Text="Clipboard Manager (Ventana Inicial)" 
+                   Foreground="White" 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center"
+                   FontSize="24"/>
+        <!-- Aquí irá el contenido principal de tu lista de clipboard -->
+    </Grid>
+</Window>
