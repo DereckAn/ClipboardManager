@@ -2,9 +2,9 @@
 
 ## Fase 1: Configuración Base y Arquitectura
 1. **Configurar estructura MVVM**
-   - [ ] Crear carpetas: Models, Views, ViewModels, Services
-   - [ ] Instalar paquetes NuGet necesarios (Microsoft.Toolkit.Mvvm, Entity Framework Core SQLite)
-   - [ ] Configurar dependency injection
+   - [x] Crear carpetas: Models, Views, ViewModels, Services
+   - [x] Instalar paquetes NuGet necesarios (Microsoft.Toolkit.Mvvm, Entity Framework Core SQLite)
+   - [x] Configurar dependency injection
 
 2. **Configurar base de datos SQLite**
    - [ ] Crear modelos de datos (ClipboardItem, ClipboardType)
