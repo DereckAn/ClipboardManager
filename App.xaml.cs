@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -26,6 +28,15 @@ namespace Clipboard
     /// </summary>
     public partial class App : Application
     {
+
+        private static IHost? _host;
+
+        public static IHost Host => _host!;
+
+        public static T GetService<T>() where T : class
+        {
+            return Host.Services.GetRequiredService<T>();
+        }
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -33,6 +44,17 @@ namespace Clipboard
         public App()
         {
             this.InitializeComponent();
+
+            _host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+                .ConfigureServices(ConfigureServices)
+                .Build();
+        }
+
+        private void ConfigureServices(IServiceCollection services)
+        {
+            // Aquí registraremos nuestros servicios más adelante
+            // services.AddSingleton<IClipboardService, ClipboardService>();
+            // services.AddTransient<MainWindowViewModel>();
         }
 
         /// <summary>
