@@ -14,7 +14,7 @@ namespace Clipboard
     public partial class App : Application
     {
         // HOST: Contenedor de servicios de la aplicación (como una caja de herramientas global)
-          private static IHost? _host;
+        private static IHost? _host;
         private IClipboardService? _clipboardService;
         private Window? m_window;
 
@@ -91,12 +91,20 @@ namespace Clipboard
             // 🚀 INICIALIZAR EL CONTENEDOR DE SERVICIOS (ya lo tienes)
             _ = Host;
 
+            // 🗄️ ASEGURAR QUE LA BASE DE DATOS ESTÉ ACTUALIZADA (NUEVO)
+            await EnsureDatabaseAsync();
+
             // 🪟 CREAR Y MOSTRAR VENTANA PRINCIPAL (ya lo tienes)
             m_window = new MainWindow();
             m_window.Activate();
 
             // 📋 INICIAR MONITOREO DEL CLIPBOARD (NUEVO)
             await StartClipboardMonitoringAsync();
+
+            // 🧪 TESTING TEMPORAL (remover después)
+            #if DEBUG
+            TestClipboardService();
+            #endif
         }
 
         private async Task StartClipboardMonitoringAsync()
@@ -112,6 +120,51 @@ namespace Clipboard
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error starting clipboard monitoring: { ex.Message}");
+            }
+        }
+
+        /// Asegura que la base de datos esté creada y actualizada
+        private async Task EnsureDatabaseAsync()
+        {
+            try
+            {
+                using var context = GetService<ClipboardDbContext>();
+                await context.Database.MigrateAsync(); // Aplica migraciones pendientes
+
+                System.Diagnostics.Debug.WriteLine("Base de datos inicializada correctamente");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error inicializando base de datos: {ex.Message}");
+            }
+        }
+
+
+        /// <summary>
+        /// MÉTODO TEMPORAL: Probar el servicio de clipboard (remover después)
+        /// </summary>
+        private void TestClipboardService()
+        {
+            try
+            {
+                var clipboardService = GetService<IClipboardService>();
+
+                // Suscribirse a eventos para testing
+                clipboardService.ClipboardChanged += (sender, item) =>
+                {
+                    System.Diagnostics.Debug.WriteLine($"✅ Clipboard detectado: { item.ClipboardType.Name}- { item.Preview}");
+                };
+
+                clipboardService.ErrorOccurred += (sender, ex) =>
+                {
+                    System.Diagnostics.Debug.WriteLine($"❌ Error en clipboard: {ex.Message}");
+                };
+
+                System.Diagnostics.Debug.WriteLine("🧪 ClipboardService configurado para testing");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Error configurando testing: {ex.Message}");
             }
         }
 

@@ -13,9 +13,9 @@
 
 ## Fase 2: Funcionalidad Core del Portapapeles
 3. **Implementar servicio de monitoreo del portapapeles**
-   - [ ] Crear ClipboardService para detectar cambios
-   - [ ] Implementar captura de diferentes tipos de datos (texto, imágenes, etc.)
-   - [ ] Integrar con la base de datos para guardar automáticamente
+   - [x] Crear ClipboardService para detectar cambios
+   - [x] Implementar captura de diferentes tipos de datos (texto, imágenes, etc.)
+   - [x] Integrar con la base de datos para guardar automáticamente
 
 4. **Crear modelos y ViewModels base**
    - [ ] ClipboardItemViewModel
