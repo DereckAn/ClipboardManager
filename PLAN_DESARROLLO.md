@@ -7,9 +7,9 @@
    - [x] Configurar dependency injection
 
 2. **Configurar base de datos SQLite**
-   - [ ] Crear modelos de datos (ClipboardItem, ClipboardType)
-   - [ ] Configurar DbContext con Entity Framework Core
-   - [ ] Crear migraciones iniciales
+   - [x] Crear modelos de datos (ClipboardItem, ClipboardType)
+   - [x] Configurar DbContext con Entity Framework Core
+   - [x] Crear migraciones iniciales
 
 ## Fase 2: Funcionalidad Core del Portapapeles
 3. **Implementar servicio de monitoreo del portapapeles**

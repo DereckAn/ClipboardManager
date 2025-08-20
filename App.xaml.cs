@@ -1,10 +1,12 @@
-﻿using System;
-using System.IO;
-using Clipboard.Models;
+﻿using Clipboard.Models;
+using Clipboard.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using Path = System.IO.Path; // ✅ Excelente solución al conflicto de nombres
 
 namespace Clipboard
@@ -13,6 +15,8 @@ namespace Clipboard
     {
         // HOST: Contenedor de servicios de la aplicación (como una caja de herramientas global)
           private static IHost? _host;
+        private IClipboardService? _clipboardService;
+        private Window? m_window;
 
         /// <summary>
         /// Propiedad que da acceso al contenedor de servicios
@@ -55,6 +59,9 @@ namespace Clipboard
                     // 🗄️ REGISTRAR ENTITY FRAMEWORK CON SQLITE
                     services.AddDbContext<ClipboardDbContext>(options =>
                         options.UseSqlite($"Data Source={dbPath}"));
+
+                    // 📋 REGISTRAR CLIPBOARD SERVICE (NUEVO)
+                    services.AddSingleton<IClipboardService, ClipboardService>();
                 })
                 .Build(); // Construye el contenedor
         }
@@ -79,18 +86,35 @@ namespace Clipboard
         /// <summary>
         /// Se ejecuta cuando Windows lanza la aplicación
         /// </summary>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            // 🚀 INICIALIZAR EL CONTENEDOR DE SERVICIOS
-            // _ = Host; significa: "ejecuta Host.get pero ignora el resultado"
-            // Esto fuerza la creación del contenedor y la configuración de la BD
+            // 🚀 INICIALIZAR EL CONTENEDOR DE SERVICIOS (ya lo tienes)
             _ = Host;
 
-            // 🪟 CREAR Y MOSTRAR VENTANA PRINCIPAL
+            // 🪟 CREAR Y MOSTRAR VENTANA PRINCIPAL (ya lo tienes)
             m_window = new MainWindow();
-            m_window.Activate(); // Mostrar la ventana
+            m_window.Activate();
+
+            // 📋 INICIAR MONITOREO DEL CLIPBOARD (NUEVO)
+            await StartClipboardMonitoringAsync();
         }
 
-        private Window? m_window;
+        private async Task StartClipboardMonitoringAsync()
+        {
+            try
+            {
+                if (m_window != null)
+                {
+                    var clipboardService = GetService<IClipboardService>();
+                    await clipboardService.StartMonitoringAsync(m_window);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error starting clipboard monitoring: { ex.Message}");
+            }
+        }
+
+
     }
 }
