@@ -311,6 +311,11 @@ namespace Clipboard.Services
                 Size = System.Text.Encoding.UTF8.GetByteCount(content),
                 Format = "text/plain"
             };
+
+            _context.ClipboardItems.Add(clipboardItem);
+            await _context.SaveChangesAsync();
+
+            ClipboardChanged?.Invoke(this, clipboardItem);
         }
 
         // Procesa contenido de imagen del portapapeles
@@ -437,5 +442,99 @@ namespace Clipboard.Services
 
             return $"{number:n1}{suffixes[counter]}";
         }
+
+        // Método para establecer contenido en el portapapeles
+        public async Task SetClipboardContentAsync(string content)
+        {
+            try
+            {
+                var dataPackage = new DataPackage();
+                dataPackage.SetText(content);
+
+                // Temporalmente deshabilitar monitoreo para evitar bucle infinito
+                var wasMonitoring = _isMonitoring;
+                _isMonitoring = false;
+
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+
+                // Pequeña pausa para asegurar que el contenido se establezca
+                await Task.Delay(100);
+
+                // Restaurar monitoreo
+                _isMonitoring = wasMonitoring;
+            }
+            catch (Exception ex)
+            {
+                await NotifyErrorAsync(ex);
+            }
+        }
     }
 }
+
+
+/*
+ *  ¿Qué hace ClipboardService.cs?
+
+  El ClipboardService es el cerebro de tu aplicación - es quien "vigila" y procesa todo lo que
+  copias en Windows. Te explico sus funciones principales:
+
+  🔍 1. Monitoreo Global del Portapapeles
+
+  // Usa Win32 API para "escuchar" cambios globalmente
+  AddClipboardFormatListener(_windowHandle)
+  ¿Qué hace? Se registra con Windows para recibir notificaciones cada vez que cualquier 
+  aplicación cambia el portapapeles (Ctrl+C, copiar, etc.).
+
+  🤖 2. Detección Inteligente de Tipos
+
+  Cuando detecta algo nuevo en el portapapeles, automáticamente identifica qué tipo es:
+
+  - 🎨 Color: #FF5733, rgb(255,87,51), hsl(120,50%,75%)
+  - 💻 Código: function test() {}, public class MyClass
+  - 🔗 Link: https://example.com
+  - 📝 Texto: Cualquier texto normal
+  - 🖼️ Imagen: Capturas de pantalla, imágenes copiadas
+  - 📁 Archivos: Cuando copias archivos en explorador
+
+  💾 3. Almacenamiento Automático
+
+  Para cada elemento:
+  - Lo guarda en la base de datos SQLite
+  - Crea un preview (resumen corto)
+  - Calcula el tamaño
+  - Asigna el tipo correcto
+  - Guarda metadatos (formato, fecha, etc.)
+
+  📢 4. Notificaciones
+
+  ClipboardChanged?.Invoke(this, clipboardItem);
+  ¿Qué hace? Notifica a tu MainWindowViewModel que hay un nuevo elemento para que actualice la
+  interfaz inmediatamente.
+
+  ↩️ 5. Restauración al Portapapeles
+
+  SetClipboardContentAsync(content)
+  ¿Qué hace? Permite "pegar de vuelta" cualquier elemento del historial al portapapeles actual.
+
+  ---
+  🔧 Conceptos Técnicos Importantes:
+
+  Win32 API Integration
+
+  [DllImport("user32.dll")]
+  AddClipboardFormatListener(IntPtr hwnd)
+  ¿Por qué? WinUI 3 solo detecta cambios cuando tu app está activa. Con Win32 API detecta cambios
+   globalmente (incluso cuando tu app está minimizada).
+
+  Fire-and-Forget Pattern
+
+  _ = ProcessClipboardChangeAsync().ConfigureAwait(false);
+  ¿Qué significa? Procesa los cambios sin bloquear la UI. El _ significa "ignora el resultado",
+  es decir, no esperamos a que termine.
+
+  Regex Patterns
+
+  ["HEX"] = new Regex(@"^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
+  ¿Para qué? Detecta automáticamente formatos de colores usando expresiones regulares (patrones
+  de texto).
+ */

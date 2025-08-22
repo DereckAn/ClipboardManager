@@ -18,9 +18,9 @@
    - [x] Integrar con la base de datos para guardar automáticamente
 
 4. **Crear modelos y ViewModels base**
-   - [ ] ClipboardItemViewModel
-   - [ ] MainWindowViewModel
-   - [ ] Implementar comandos básicos (MVVM)
+   - [x] ClipboardItemViewModel
+   - [x] MainWindowViewModel
+   - [x] Implementar comandos básicos (MVVM)
 
 ## Fase 3: Interfaz de Usuario Base
 5. **Diseñar layout principal**

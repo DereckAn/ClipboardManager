@@ -23,6 +23,9 @@ namespace Clipboard.Services
         // Detiene el monitoreo del portapapeles
         Task StopMonitoringAsync();
 
+        // Método para establecer contenido en el portapapeles
+        Task SetClipboardContentAsync(string content);
+
         // Indica si el servicio está monitoreando el portapapeles
         bool IsMonitoring { get; }
     }
