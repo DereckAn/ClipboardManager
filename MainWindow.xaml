@@ -124,8 +124,7 @@
             <Border Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
                 <Grid>
                     <!-- Sin selección -->
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
-                               Visibility="Visible">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.ShowEmptyStateVisibility, Mode=OneWay}">
                         <TextBlock Text="📋" FontSize="48" HorizontalAlignment="Center" Opacity="0.3"/>
                         <TextBlock Text="Selecciona un elemento para ver los detalles" 
                                   FontSize="16" Opacity="0.6" HorizontalAlignment="Center" 
@@ -133,7 +132,7 @@
                     </StackPanel>
                     
                     <!-- Con selección -->
-                    <ScrollViewer Visibility="Collapsed"
+                    <ScrollViewer Visibility="{x:Bind ViewModel.ShowSelectedItemVisibility, Mode=OneWay}"
                                  Padding="24">
                         <StackPanel Spacing="16">
                             <!-- Encabezado -->
@@ -142,17 +141,12 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Fecha placeholder" 
-                                              FontSize="14" 
-                                              Opacity="0.7"/>
-                                    <TextBlock Text="Tamaño placeholder" 
-                                              FontSize="12" 
-                                              Opacity="0.5" 
-                                              Margin="0,4,0,0"/>
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedItem.FormattedDate, Mode=OneWay}" FontSize="14" Opacity="0.7"/>
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedItem.FormattedSize, Mode=OneWay}" FontSize="12" Opacity="0.5" Margin="0,4,0,0"/>
                                 </StackPanel>
-                                
+
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                                     <!-- Botón Favorito -->
                                     <Button Width="40" Height="32">
@@ -185,7 +179,7 @@
                                              VerticalScrollMode="Auto"
                                              HorizontalScrollBarVisibility="Auto"
                                              VerticalScrollBarVisibility="Auto">
-                                    <TextBlock Text="Contenido del elemento seleccionado aparecerá aquí" 
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedItem.Content, Mode=OneWay}"
                                               TextWrapping="Wrap" 
                                               FontFamily="Consolas" 
                                               FontSize="13" 

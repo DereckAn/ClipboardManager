@@ -3,6 +3,7 @@ using Clipboard.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -34,6 +35,10 @@ namespace Clipboard.ViewModels
         // Coleccion filtrada (la que se muestra en la UI
         public ObservableCollection<ClipboardItemViewModel> FilteredItems { get; }
 
+        // Propiedades computadas para la visibilidad dinamica
+        public Visibility ShowEmptyStateVisibility => SelectedItem == null ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ShowSelectedItemVisibility => SelectedItem != null ? Visibility.Visible : Visibility.Collapsed;
+
         public MainWindowViewModel(IClipboardService clipboardService, ClipboardDbContext dbContext)
         {
             _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
@@ -58,6 +63,12 @@ namespace Clipboard.ViewModels
             if (e.PropertyName == nameof(SearchText))
             {
                 FilterItems();
+            }
+
+            if (e.PropertyName == nameof(SelectedItem))
+            {
+                OnPropertyChanged(nameof(ShowEmptyStateVisibility));
+                OnPropertyChanged(nameof(ShowSelectedItemVisibility));
             }
         }
 
