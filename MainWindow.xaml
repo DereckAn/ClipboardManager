@@ -6,192 +6,23 @@
     xmlns:local="using:Clipboard"
     xmlns:viewmodels="using:Clipboard.ViewModels"
     xmlns:converters="using:Clipboard.Converters"
+    xmlns:controls="using:Clipboard.Views.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Title="Clipboard Manager">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="48"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <TabView Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <TabViewItem Header="📋 Historial">
+            <controls:HistoryPanel x:Name="HistoryControl"/>
+        </TabViewItem>
 
-        <!-- Título -->
-        <Border Grid.Row="0" Background="{ThemeResource SystemControlBackgroundAccentBrush}">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
-                <TextBlock Text="📋 Clipboard Manager" FontSize="16" FontWeight="SemiBold"/>
-            </StackPanel>
-        </Border>
+        <TabViewItem Header="⭐ Favoritos">
+            <controls:FavoritesPanel/>
+        </TabViewItem>
 
-        <!-- Contenido -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="400"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Panel Izquierdo -->
-            <Border Grid.Column="0" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="0,0,1,0">
-                <Grid Margin="16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    
-                    <!-- Búsqueda -->
-                    <TextBox Grid.Row="0" 
-                             Text="{x:Bind ViewModel.SearchText, Mode=TwoWay}" 
-                             PlaceholderText="Buscar..." 
-                             Margin="0,0,0,16"/>
-                    
-                    <!-- Lista de elementos -->
-                    <ListView Grid.Row="1" 
-                              ItemsSource="{x:Bind ViewModel.FilteredItems}" 
-                              SelectedItem="{x:Bind ViewModel.SelectedItem, Mode=TwoWay}"
-                              SelectionMode="Single">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="viewmodels:ClipboardItemViewModel">
-                                <Border Background="{ThemeResource SubtleFillColorTransparentBrush}" 
-                                       CornerRadius="8" Padding="12" Margin="0,0,0,8"
-                                       BorderBrush="{ThemeResource AccentButtonBackgroundPressed}"
-                                       BorderThickness="0">
-                                    <Border.Resources>
-                                        <Storyboard x:Name="HoverStoryboard">
-                                            <ColorAnimation Storyboard.TargetName="HoverBorder" 
-                                                          Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                          To="{ThemeResource SystemAccentColorLight3}" 
-                                                          Duration="0:0:0.2"/>
-                                        </Storyboard>
-                                    </Border.Resources>
-                                    
-                                    <Border x:Name="HoverBorder" Background="Transparent" CornerRadius="8">
-                                        <StackPanel>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                
-                                                <TextBlock Grid.Column="0" 
-                                                          Text="{x:Bind FormattedDate}" 
-                                                          FontSize="12" 
-                                                          Opacity="0.7"/>
-
-                                                <TextBlock Grid.Column="1" 
-                                                            Text="{x:Bind FavoriteIconForList, Mode=OneWay}" 
-                                                            FontSize="12"
-                                                            Opacity="0.7"/>
-                                            </Grid>
-                                            
-                                            <TextBlock Text="{x:Bind DisplayContent}" 
-                                                      FontSize="14" 
-                                                      Margin="0,4" 
-                                                      MaxLines="2" 
-                                                      TextWrapping="Wrap" 
-                                                      TextTrimming="CharacterEllipsis"/>
-                                                      
-                                            <TextBlock Text="{x:Bind FormattedSize}" 
-                                                      FontSize="11" 
-                                                      Opacity="0.5"/>
-                                        </StackPanel>
-                                    </Border>
-                                </Border>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                        
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                <Setter Property="Padding" Value="0"/>
-                                <Setter Property="Margin" Value="0"/>
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                    </ListView>
-                    
-                    <!-- Contador -->
-                    <TextBlock Grid.Row="2" 
-                              Text="elementos" 
-                              FontSize="12" 
-                              HorizontalAlignment="Center" 
-                              Margin="0,16"/>
-                </Grid>
-            </Border>
-
-            <!-- Panel Derecho -->
-            <Border Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}">
-                <Grid>
-                    <!-- Sin selección -->
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.ShowEmptyStateVisibility, Mode=OneWay}">
-                        <TextBlock Text="📋" FontSize="48" HorizontalAlignment="Center" Opacity="0.3"/>
-                        <TextBlock Text="Selecciona un elemento para ver los detalles" 
-                                  FontSize="16" Opacity="0.6" HorizontalAlignment="Center" 
-                                  TextAlignment="Center" Margin="0,16"/>
-                    </StackPanel>
-                    
-                    <!-- Con selección -->
-                    <ScrollViewer Visibility="{x:Bind ViewModel.ShowSelectedItemVisibility, Mode=OneWay}"
-                                 Padding="24">
-                        <StackPanel Spacing="16">
-                            <!-- Encabezado -->
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{x:Bind ViewModel.SelectedItem.FormattedDate, Mode=OneWay}" FontSize="14" Opacity="0.7"/>
-                                    <TextBlock Text="{x:Bind ViewModel.SelectedItem.FormattedSize, Mode=OneWay}" FontSize="12" Opacity="0.5" Margin="0,4,0,0"/>
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                    <!-- Botón Favorito -->
-                                    <Button Command="{x:Bind ViewModel.ToggleFavoriteCommand}" CommandParameter="{x:Bind ViewModel.SelectedItem, Mode=OneWay}" Width="40" Height="32">
-                                        <TextBlock Text="{x:Bind ViewModel.SelectedItem.FavoriteIcon, Mode=OneWay}" FontSize="14"/>
-                                    </Button>
-
-                                    <!-- Botón Copiar -->
-                                    <Button Command="{x:Bind ViewModel.CopyToClipboardCommand}" CommandParameter="{x:Bind ViewModel.SelectedItem, Mode=OneWay}" Width="80" Height="32">
-                                        <StackPanel Orientation="Horizontal" Spacing="4">
-                                            <TextBlock Text="📋" FontSize="12"/>
-                                            <TextBlock Text="Copiar" FontSize="12"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <!-- Botón Eliminar -->
-                                    <Button Command="{x:Bind ViewModel.DeleteItemCommand}" CommandParameter="{x:Bind ViewModel.SelectedItem, Mode=OneWay}" Width="40" Height="32">
-                                        <TextBlock Text="🗑️" FontSize="14"/>
-                                    </Button>
-                                </StackPanel>
-                            </Grid>
-                            
-                            <!-- Separador -->
-                            <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" 
-                                      Opacity="0.5"/>
-                            
-                            <!-- Contenido -->
-                            <Border Background="{ThemeResource LayerFillColorAltBrush}" 
-                                   CornerRadius="8" 
-                                   Padding="16" 
-                                   MinHeight="200">
-                                <ScrollViewer ZoomMode="Disabled" 
-                                             HorizontalScrollMode="Auto" 
-                                             VerticalScrollMode="Auto"
-                                             HorizontalScrollBarVisibility="Auto"
-                                             VerticalScrollBarVisibility="Auto">
-                                    <TextBlock Text="{x:Bind ViewModel.SelectedItem.Content, Mode=OneWay}"
-                                              TextWrapping="Wrap" 
-                                              FontFamily="Consolas" 
-                                              FontSize="13" 
-                                              IsTextSelectionEnabled="True"/>
-                                </ScrollViewer>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
-            </Border>
-        </Grid>
-    </Grid>
+        <TabViewItem Header="⚙️ Configuración">
+            <controls:SettingsPanel/>
+        </TabViewItem>
+    </TabView>
 </Window>

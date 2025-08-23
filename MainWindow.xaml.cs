@@ -18,6 +18,8 @@ namespace Clipboard
 
             // AHORA: ViewModel con todos los servicios inyectados
             ViewModel = App.GetService<MainWindowViewModel>();
+
+            HistoryControl.ViewModel = ViewModel;
         }
     }
 }
