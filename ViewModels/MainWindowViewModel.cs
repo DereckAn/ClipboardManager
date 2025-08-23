@@ -26,8 +26,27 @@ namespace Clipboard.ViewModels
         private string _searchText = string.Empty;
 
         // Campo para el elemento seleccionado
-        [ObservableProperty]
         private ClipboardItemViewModel? _selectedItem;
+
+        public ClipboardItemViewModel? SelectedItem
+        {
+            get => _selectedItem;
+            set
+            {
+                if (SetProperty(ref _selectedItem, value))
+                {
+                    // Notificar cambios de visibilidad
+                    OnPropertyChanged(nameof(ShowEmptyStateVisibility));
+                    OnPropertyChanged(nameof(ShowSelectedItemVisibility));
+
+                    // auto copiar cuando se selecciona
+                    if (value != null)
+                    {
+                        _ = CopyToClipboardAsync(value); // fire-and-forget
+                    }
+                }
+            }
+        }
 
         // Coleccion observable de elementos del portapapeles
         public ObservableCollection<ClipboardItemViewModel> ClipboardItems { get; }
