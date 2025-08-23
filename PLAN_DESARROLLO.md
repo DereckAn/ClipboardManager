@@ -22,6 +22,31 @@
    - [x] MainWindowViewModel
    - [x] Implementar comandos básicos (MVVM)
 
+## Fase 2.5: Integración y Configuración de Servicios
+4.5. **Configurar Dependency Injection completo**
+   - [ ] Configurar ServiceCollection en App.xaml.cs
+   - [ ] Registrar todos los servicios (IClipboardService, DbContext, ViewModels)
+   - [ ] Implementar service lifetime management (Singleton, Transient, Scoped)
+   - [ ] Crear factory patterns para ViewModels complejos
+
+4.6. **Implementar inicialización robusta de aplicación**
+   - [ ] Configurar startup sequence en App.xaml.cs
+   - [ ] Implementar database initialization con migrations automáticas
+   - [ ] Crear health checks para servicios críticos
+   - [ ] Configurar graceful shutdown handling
+
+4.7. **Establecer sistema de logging y error handling**
+   - [ ] Configurar logging centralizado (ILogger, Serilog, etc.)
+   - [ ] Implementar global exception handler
+   - [ ] Crear error reporting UI (toast notifications, dialogs)
+   - [ ] Establecer logging levels (Debug, Info, Warning, Error, Critical)
+
+4.8. **Activar servicios y conectar con UI**
+   - [ ] Inicializar ClipboardService monitoring en startup
+   - [ ] Conectar ViewModels con servicios reales via DI
+   - [ ] Implementar carga inicial de datos desde base de datos
+   - [ ] Configurar service communication patterns (events, messaging)
+
 ## Fase 3: Interfaz de Usuario Base
 5. **Diseñar layout principal**
    - [x] Crear estructura de dos paneles (izquierdo/derecho)
@@ -29,9 +54,28 @@
    - [x] Configurar binding con ViewModels
 
 6. **Implementar lista de elementos del portapapeles**
-   - [ ] ListView con datos binding
-   - [ ] Templates para diferentes tipos de contenido
-   - [ ] Selección de elementos
+   - [x] ListView con datos binding
+   - [x] Templates para diferentes tipos de contenido
+   - [x] Selección de elementos
+
+## Fase 3.5: Funcionalidad Completa de UI
+6.5. **Implementar converters y visibilidad dinámica**
+   - [ ] Configurar converters en App.xaml (ObjectToVisibility, InvertedObjectToVisibility)
+   - [ ] Conectar visibilidad dinámica del panel de detalles
+   - [ ] Implementar converters adicionales (BoolToVisibility, StringFormat, etc.)
+   - [ ] Testing de reactive UI changes
+
+6.6. **Completar comandos y interactividad**
+   - [ ] Conectar comando CopyToClipboard con ClipboardService real
+   - [ ] Implementar comando ToggleFavorite con persistencia en BD
+   - [ ] Conectar comando DeleteItem con confirmación de usuario
+   - [ ] Implementar comando Initialize con carga de datos
+
+6.7. **Implementar manejo de estados de UI**
+   - [ ] Loading states para operaciones async
+   - [ ] Empty states cuando no hay elementos
+   - [ ] Error states para fallos de operaciones
+   - [ ] Success feedback para acciones de usuario
 
 ## Fase 4: Funcionalidades Avanzadas
 7. **Implementar búsqueda y filtrado**
@@ -42,6 +86,19 @@
 8. **Crear vista detallada del panel derecho**
    - [ ] Mostrar contenido completo del elemento seleccionado
    - [ ] Diferentes visualizadores según el tipo (texto, imagen, etc.)
+
+## Fase 4.5: Testing y Validación de Integración
+8.5. **Testing de integración completa**
+   - [ ] Unit tests para servicios críticos (ClipboardService, DbContext)
+   - [ ] Integration tests para ViewModel-Service communication
+   - [ ] UI automation tests para flujos principales
+   - [ ] Performance testing para operaciones de base de datos
+
+8.6. **Validación de robustez y manejo de errores**
+   - [ ] Testing de scenarios de fallo (BD no disponible, permisos denegados)
+   - [ ] Memory leak testing para long-running operations
+   - [ ] Stress testing con grandes volúmenes de clipboard items
+   - [ ] Recovery testing después de crashes
 
 ## Fase 5: Hotkeys y Configuración
 9. **Implementar sistema de hotkeys globales**
@@ -88,12 +145,45 @@
 - Implementar manejo robusto de errores en cada fase
 - Mantener código limpio y bien documentado
 
+## ⚠️ Fases Críticas Identificadas
+
+### **Fase 2.5** - Integración y Configuración de Servicios
+**Estado**: ❌ **FALTA COMPLETAMENTE**
+**Impacto**: Sin esta fase, la aplicación **NO funciona** - solo muestra UI estática
+**Requisitos críticos**:
+- Dependency Injection configurado
+- Servicios registrados e inicializados
+- Base de datos conectada y con migrations
+- Error handling implementado
+
+### **Fase 3.5** - Funcionalidad Completa de UI  
+**Estado**: ❌ **PARCIALMENTE IMPLEMENTADA**
+**Impacto**: UI no responsive a cambios de datos, comandos no funcionales
+**Requisitos críticos**:
+- Converters para visibilidad dinámica
+- Comandos conectados a servicios reales
+- Estados de UI (loading, empty, error)
+
+### **Orden de implementación recomendado**:
+1. **Fase 2.5** (crítica) - Hacer que la app funcione básicamente
+2. **Fase 3.5** (alta prioridad) - Hacer la UI completamente interactiva
+3. **Fase 4.5** (media prioridad) - Asegurar robustez con testing
+4. Continuar con fases restantes según plan original
+
+### **Nota sobre documentación**:
+- Cada fase debe documentarse en archivos paso[X].md
+- Errores y soluciones deben registrarse para referencia futura
+- Métricas de compilación y warnings deben trackearse
+
 ## Progreso General
-- [x] Fase 1 completada
-- [x] Fase 2 completada
-- [ ] Fase 3 completada
-- [ ] Fase 4 completada
-- [ ] Fase 5 completada
-- [ ] Fase 6 completada
-- [ ] Fase 7 completada
-- [ ] Fase 8 completada
+- [x] Fase 1: Configuración Base y Arquitectura - completada
+- [x] Fase 2: Funcionalidad Core del Portapapeles - completada
+- [ ] Fase 2.5: Integración y Configuración de Servicios - **CRÍTICA PARA FUNCIONALIDAD**
+- [x] Fase 3: Interfaz de Usuario Base - completada
+- [ ] Fase 3.5: Funcionalidad Completa de UI - **NECESARIA PARA INTERACTIVIDAD**
+- [ ] Fase 4: Funcionalidades Avanzadas - pendiente
+- [ ] Fase 4.5: Testing y Validación de Integración - pendiente
+- [ ] Fase 5: Hotkeys y Configuración - pendiente
+- [ ] Fase 6: Efectos Visuales y Pulido - pendiente
+- [ ] Fase 7: Optimización y Testing - pendiente
+- [ ] Fase 8: Empaquetado y Distribución - pendiente
