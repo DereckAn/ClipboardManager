@@ -149,17 +149,20 @@
 
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                                     <!-- Botón Favorito -->
-                                    <Button Width="40" Height="32">
-                                        <TextBlock Text="⭐" FontSize="14"/>
+                                    <Button Command="{x:Bind ViewModel.ToggleFavoriteCommand}" CommandParameter="{x:Bind ViewModel.SelectedItem, Mode=OneWay}" Width="40" Height="32">
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedItem.FavoriteIcon, Mode=OneWay}" FontSize="14"/>
                                     </Button>
-                                    
+
                                     <!-- Botón Copiar -->
-                                    <Button Width="80" Height="32">
-                                        <TextBlock Text="Copiar" FontSize="12"/>
+                                    <Button Command="{x:Bind ViewModel.CopyToClipboardCommand}" CommandParameter="{x:Bind ViewModel.SelectedItem, Mode=OneWay}" Width="80" Height="32">
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <TextBlock Text="📋" FontSize="12"/>
+                                            <TextBlock Text="Copiar" FontSize="12"/>
+                                        </StackPanel>
                                     </Button>
-                                    
+
                                     <!-- Botón Eliminar -->
-                                    <Button Width="40" Height="32">
+                                    <Button Command="{x:Bind ViewModel.DeleteItemCommand}" CommandParameter="{x:Bind ViewModel.SelectedItem, Mode=OneWay}" Width="40" Height="32">
                                         <TextBlock Text="🗑️" FontSize="14"/>
                                     </Button>
                                 </StackPanel>

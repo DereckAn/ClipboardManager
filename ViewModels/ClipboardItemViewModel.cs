@@ -27,17 +27,26 @@ namespace Clipboard.ViewModels
         public byte[]? BinaryData => _model.BinaryData;
         public ClipboardType ClipboardType => _model.ClipboardType;
 
+
         // Propiedad observable para IsFavorite
         public bool IsFavorite
         {
             get => _model.IsFavorite;
-            set => SetProperty(_model.IsFavorite, value, _model, (m, val) => m.IsFavorite = val);
+            set
+            {
+                if (SetProperty(_model.IsFavorite, value, _model, (model, val) => model.IsFavorite = val))
+                {
+                    // ✨ NUEVO: Notificar que FavoriteIcon también cambió
+                    OnPropertyChanged(nameof(FavoriteIcon));
+                }
+            }
         }
 
         // Propiedad computadas para la UI 
         public string FormattedDate => CreatedAt.ToString("dd/MM/yyyy HH:mm");
         public string FormattedSize => FormatBytes(Size);
         public string DisplayContent => string.IsNullOrEmpty(Preview) ? Content : Preview;
+        public string FavoriteIcon => IsFavorite ? "⭐" : "☆";
 
 
         // Metodo auxiliar para formatear bytes
