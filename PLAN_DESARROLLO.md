@@ -24,9 +24,9 @@
 
 ## Fase 3: Interfaz de Usuario Base
 5. **Diseñar layout principal**
-   - [ ] Crear estructura de dos paneles (izquierdo/derecho)
-   - [ ] Implementar navegación básica
-   - [ ] Configurar binding con ViewModels
+   - [x] Crear estructura de dos paneles (izquierdo/derecho)
+   - [x] Implementar navegación básica
+   - [x] Configurar binding con ViewModels
 
 6. **Implementar lista de elementos del portapapeles**
    - [ ] ListView con datos binding
@@ -89,8 +89,8 @@
 - Mantener código limpio y bien documentado
 
 ## Progreso General
-- [ ] Fase 1 completada
-- [ ] Fase 2 completada
+- [x] Fase 1 completada
+- [x] Fase 2 completada
 - [ ] Fase 3 completada
 - [ ] Fase 4 completada
 - [ ] Fase 5 completada
