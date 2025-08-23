@@ -36,17 +36,20 @@ namespace Clipboard.ViewModels
 
         public MainWindowViewModel(IClipboardService clipboardService, ClipboardDbContext dbContext)
         {
-            //_clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
-            //_dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
-            _clipboardService = clipboardService; // Permitir null temporalmente
-            _dbContext = dbContext; // Permitir null temporalmente
+            //_clipboardService = clipboardService; // Permitir null temporalmente
+            //_dbContext = dbContext; // Permitir null temporalmente
 
             ClipboardItems = new ObservableCollection<ClipboardItemViewModel>();
             FilteredItems = new ObservableCollection<ClipboardItemViewModel>();
 
             // Suscribirse a cambios en el texto de busqueda
             PropertyChanged += OnPropertyChanged;
+
+            // Nuevo Inicializar automaticamente al crear el viewmodel
+            _ = InitializeAsync();
         }
 
         // Metodo que se ejecuta cuando cambia cualquier propiedad
@@ -173,12 +176,6 @@ namespace Clipboard.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"Error deleting item: {ex.Message}");
             }
-        }
-
-        // Constructor temporal para testing (agregar después del constructor existente)
-        public MainWindowViewModel() : this(null, null)
-        {
-            // Constructor vacío para diseño/testing
         }
 
     }

@@ -1,10 +1,12 @@
 ﻿using Clipboard.Models;
 using Clipboard.Services;
+using Clipboard.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using System;
+using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Threading.Tasks;
 using Path = System.IO.Path; // ✅ Excelente solución al conflicto de nombres
@@ -39,6 +41,11 @@ namespace Clipboard
         {
             return Microsoft.Extensions.Hosting.Host
                 .CreateDefaultBuilder()  // Configuración básica de .NET
+                .ConfigureLogging(logging => // Aquí configuramos el logging
+                {
+                    logging.ClearProviders(); // Limpiamos proveedores por defecto
+                    logging.AddDebug();       // Agregamos logging a la salida de debug
+                })
                 .ConfigureServices(services =>  // Aquí registramos nuestros servicios
                 {
                     // 📁 CONFIGURACIÓN DE LA BASE DE DATOS
@@ -57,11 +64,20 @@ namespace Clipboard
                     }
 
                     // 🗄️ REGISTRAR ENTITY FRAMEWORK CON SQLITE
-                    services.AddDbContext<ClipboardDbContext>(options =>
-                        options.UseSqlite($"Data Source={dbPath}"));
+                    services.AddSingleton<ClipboardDbContext>(provider =>
+                    {
+                        var options = new DbContextOptionsBuilder<ClipboardDbContext>()
+                            .UseSqlite($"Data Source={dbPath}")
+                            .Options;
+                        return new ClipboardDbContext(options);
+                    });
 
                     // 📋 REGISTRAR CLIPBOARD SERVICE (NUEVO)
                     services.AddSingleton<IClipboardService, ClipboardService>();
+
+                    // Registrar VIEWMODELS
+                    services.AddTransient<MainWindowViewModel>();
+                    services.AddTransient<ClipboardItemViewModel>();
                 })
                 .Build(); // Construye el contenedor
         }
@@ -128,7 +144,7 @@ namespace Clipboard
         {
             try
             {
-                using var context = GetService<ClipboardDbContext>();
+                var context = GetService<ClipboardDbContext>();
                 await context.Database.MigrateAsync(); // Aplica migraciones pendientes
 
                 System.Diagnostics.Debug.WriteLine("Base de datos inicializada correctamente");

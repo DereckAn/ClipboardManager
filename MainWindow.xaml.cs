@@ -12,8 +12,12 @@ namespace Clipboard
         {
             this.InitializeComponent();
 
-            // Crear el ViewModel (temporal, después lo haremos con DI)
-            ViewModel = new MainWindowViewModel();
+
+            // ANTES: Constructor vacío sin servicios
+            // ViewModel = new MainWindowViewModel();
+
+            // AHORA: ViewModel con todos los servicios inyectados
+            ViewModel = App.GetService<MainWindowViewModel>();
         }
     }
 }
