@@ -38,6 +38,7 @@ namespace Clipboard.ViewModels
                 {
                     // ✨ NUEVO: Notificar que FavoriteIcon también cambió
                     OnPropertyChanged(nameof(FavoriteIcon));
+                    OnPropertyChanged(nameof(FavoriteIconForList));
                 }
             }
         }
@@ -47,6 +48,7 @@ namespace Clipboard.ViewModels
         public string FormattedSize => FormatBytes(Size);
         public string DisplayContent => string.IsNullOrEmpty(Preview) ? Content : Preview;
         public string FavoriteIcon => IsFavorite ? "⭐" : "☆";
+        public string FavoriteIconForList => IsFavorite ? "⭐" : "";
 
 
         // Metodo auxiliar para formatear bytes

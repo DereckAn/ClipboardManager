@@ -78,12 +78,11 @@
                                                           Text="{x:Bind FormattedDate}" 
                                                           FontSize="12" 
                                                           Opacity="0.7"/>
-                                                          
-                                                <FontIcon Grid.Column="1" 
-                                                         FontFamily="Segoe MDL2 Assets" 
-                                                         Glyph="&#xE734;" 
-                                                         FontSize="12"
-                                                         Visibility="{x:Bind IsFavorite}"/>
+
+                                                <TextBlock Grid.Column="1" 
+                                                            Text="{x:Bind FavoriteIconForList, Mode=OneWay}" 
+                                                            FontSize="12"
+                                                            Opacity="0.7"/>
                                             </Grid>
                                             
                                             <TextBlock Text="{x:Bind DisplayContent}" 

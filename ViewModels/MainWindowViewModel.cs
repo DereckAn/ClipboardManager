@@ -35,6 +35,13 @@ namespace Clipboard.ViewModels
         // Coleccion filtrada (la que se muestra en la UI
         public ObservableCollection<ClipboardItemViewModel> FilteredItems { get; }
 
+        // Registry para mantener una sola instancia por elemento
+        private readonly Dictionary<int, ClipboardItemViewModel> _viewModelRegistry;
+
+        // Control de cache
+        private const int MAX_CACHED_VIEWMODELS = 1000;
+        private readonly Queue<int> _cacheOrder;
+
         // Propiedades computadas para la visibilidad dinamica
         public Visibility ShowEmptyStateVisibility => SelectedItem == null ? Visibility.Visible : Visibility.Collapsed;
         public Visibility ShowSelectedItemVisibility => SelectedItem != null ? Visibility.Visible : Visibility.Collapsed;
@@ -47,6 +54,12 @@ namespace Clipboard.ViewModels
             //_clipboardService = clipboardService; // Permitir null temporalmente
             //_dbContext = dbContext; // Permitir null temporalmente
 
+            // Inicializar el registry
+            _viewModelRegistry = new Dictionary<int, ClipboardItemViewModel>();
+
+            // Inicializar control de cache
+            _cacheOrder = new Queue<int>();
+
             ClipboardItems = new ObservableCollection<ClipboardItemViewModel>();
             FilteredItems = new ObservableCollection<ClipboardItemViewModel>();
 
@@ -55,6 +68,77 @@ namespace Clipboard.ViewModels
 
             // Nuevo Inicializar automaticamente al crear el viewmodel
             _ = InitializeAsync();
+        }
+
+        // Método para obtener o crear ViewModels únicos
+        private ClipboardItemViewModel GetOrCreateViewModel(ClipboardItem item)
+        {
+            if (_viewModelRegistry.TryGetValue(item.Id, out var existingViewModel))
+            {
+                // Ya existe, moverlo al frente del cache
+                MoveToFront(item.Id);
+                return existingViewModel;
+            }
+
+            // No existe, crear nuevo
+            var newViewModel = new ClipboardItemViewModel(item);
+
+            // Agregar al registry
+            _viewModelRegistry[item.Id] = newViewModel;
+            _cacheOrder.Enqueue(item.Id);
+
+            // Limpiar cache si es necesario
+            CleanupCacheIfNeeded();
+
+            return newViewModel;
+        }
+
+        // Limpiar cache cuando excede el límite
+        private void CleanupCacheIfNeeded()
+        {
+            while (_viewModelRegistry.Count > MAX_CACHED_VIEWMODELS && _cacheOrder.Count > 0)
+            {
+                // Remover el ViewModel más antiguo
+                var oldestId = _cacheOrder.Dequeue();
+
+                // Solo remover si no es el elemento seleccionado actualmente
+                if (SelectedItem?.Id != oldestId)
+                {
+                    _viewModelRegistry.Remove(oldestId);
+                }
+                else
+                {
+                    // Si es el seleccionado, mantenerlo pero moverlo al final
+                    _cacheOrder.Enqueue(oldestId);
+                    break; // Evitar loop infinito
+                }
+            }
+        }
+
+        // Mover un elemento al frente del cache sin reasignar la cola
+        private void MoveToFront(int itemId)
+        {
+            // Crear lista temporal con todos los elementos excepto el que queremos mover
+            var tempList = new List<int>();
+
+            // Vaciar la cola original guardando elementos en lista temporal
+            while (_cacheOrder.Count > 0)
+            {
+                var id = _cacheOrder.Dequeue();
+                if (id != itemId) // Solo guardar los que NO son el que queremos mover
+                {
+                    tempList.Add(id);
+                }
+            }
+
+            // Volver a llenar la cola: primero los elementos guardados, luego el movido
+            foreach (var id in tempList)
+            {
+                _cacheOrder.Enqueue(id);
+            }
+
+            // Finalmente, agregar el elemento movido al final (más reciente)
+            _cacheOrder.Enqueue(itemId);
         }
 
         // Metodo que se ejecuta cuando cambia cualquier propiedad
@@ -92,7 +176,8 @@ namespace Clipboard.ViewModels
 
             foreach (var item in items)
             {
-                ClipboardItems.Add(new ClipboardItemViewModel(item));
+                //ClipboardItems.Add(new ClipboardItemViewModel(item));
+                ClipboardItems.Add(GetOrCreateViewModel(item));
             }
 
             FilterItems();
@@ -102,7 +187,10 @@ namespace Clipboard.ViewModels
         private async void OnClipboardChanged(object? sender, ClipboardItem newItem)
         {
             // Create el ViewModel del nuevo elemento
-            var viewModel = new ClipboardItemViewModel(newItem);
+            //var viewModel = new ClipboardItemViewModel(newItem);
+            var viewModel = GetOrCreateViewModel(newItem);
+
+
 
             // Agregar al inicio de la coleccion (mas reciente primero)
             ClipboardItems.Insert(0, viewModel);
