@@ -12,17 +12,59 @@
     mc:Ignorable="d"
     Title="Clipboard Manager">
 
-    <TabView Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <TabViewItem Header="📋 Historial">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/> <!-- For the header -->
+            <RowDefinition Height="*"/>    <!-- For the main content -->
+        </Grid.RowDefinitions>
+        
+        <!-- Navbar global -->
+        <Border Grid.Row="0" Background="{ThemeResource SystemControlBackgroundAccentBrush}">
+            <Grid Margin="16,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/> <!-- Area de busqueda y filtros -->
+                    <ColumnDefinition Width="auto"/>    <!-- Area de tabs con iconos -->
+                </Grid.ColumnDefinitions>
+                
+                <!-- Busqueda + Dropdown (Izquierda) -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+                    <TextBox x:Name="SearchBox"
+                             Width="250"
+                             Text="{x:Bind ViewModel.SearchText, Mode=TwoWay}"/>
+                    <ComboBox x:Name="CategoryComboBox"
+                              Width="150"
+                              SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
+                              ItemsSource="{x:Bind ViewModel.Categories}"
+                              PlaceholderText="Categoria"/>
+                </StackPanel>
+
+                <!-- Tabs con iconos (derecha) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                    <Button x:Name="HistoryButton" 
+                              Content="📋" 
+                              Width="40" Height="40"
+                              ToolTipService.ToolTip="Historial"
+                              Click="OnHistoryButtonClick"/>
+                    <Button x:Name="FavoritesButton" 
+                              Content="⭐" 
+                              Width="40" Height="40"
+                              ToolTipService.ToolTip="Favoritos"
+                              Click="OnFavoritesButtonClick"/>
+                    <Button x:Name="SettingsButton" 
+                              Content="⚙️" 
+                              Width="40" Height="40"
+                              ToolTipService.ToolTip="Configuración"
+                              Click="OnSettingsButtonClick"/>
+                </StackPanel>
+
+            </Grid>
+            
+        </Border>
+
+        <!-- CONTENIDO DINÁMICO -->
+        <ContentPresenter Grid.Row="1" x:Name="CurrentContent">
+            <!-- Por defecto mostrar HistoryPanel -->
             <controls:HistoryPanel x:Name="HistoryControl"/>
-        </TabViewItem>
-
-        <TabViewItem Header="⭐ Favoritos">
-            <controls:FavoritesPanel/>
-        </TabViewItem>
-
-        <TabViewItem Header="⚙️ Configuración">
-            <controls:SettingsPanel/>
-        </TabViewItem>
-    </TabView>
+        </ContentPresenter>
+    </Grid>
 </Window>

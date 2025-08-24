@@ -1,3 +1,4 @@
+using Clipboard.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -20,6 +21,8 @@ namespace Clipboard.Views.Controls
 {
     public sealed partial class FavoritesPanel : UserControl
     {
+        public FavoritesViewModel ViewModel { get; set; }
+
         public FavoritesPanel()
         {
             InitializeComponent();

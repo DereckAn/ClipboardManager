@@ -25,6 +25,9 @@ namespace Clipboard.ViewModels
         [ObservableProperty]
         private string _searchText = string.Empty;
 
+        [ObservableProperty]
+        private string _selectedCategory = "Todos";
+
         // Campo para el elemento seleccionado
         private ClipboardItemViewModel? _selectedItem;
 
@@ -50,6 +53,9 @@ namespace Clipboard.ViewModels
 
         // Coleccion observable de elementos del portapapeles
         public ObservableCollection<ClipboardItemViewModel> ClipboardItems { get; }
+
+        // Opciones para dropdown de categorias 
+        public ObservableCollection<string> Categories { get; }
 
         // Coleccion filtrada (la que se muestra en la UI
         public ObservableCollection<ClipboardItemViewModel> FilteredItems { get; }
@@ -84,6 +90,16 @@ namespace Clipboard.ViewModels
 
             // Suscribirse a cambios en el texto de busqueda
             PropertyChanged += OnPropertyChanged;
+
+            Categories = new ObservableCollection<string>
+            {
+                "Todos",
+                "Texto",
+                "Código",
+                "Links",
+                "Colores",
+                "Imágenes"
+            };
 
             // Nuevo Inicializar automaticamente al crear el viewmodel
             _ = InitializeAsync();
@@ -163,7 +179,7 @@ namespace Clipboard.ViewModels
         // Metodo que se ejecuta cuando cambia cualquier propiedad
         private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(SearchText))
+            if (e.PropertyName == nameof(SearchText) || e.PropertyName == nameof(SelectedCategory))
             {
                 FilterItems();
             }
@@ -172,6 +188,12 @@ namespace Clipboard.ViewModels
             {
                 OnPropertyChanged(nameof(ShowEmptyStateVisibility));
                 OnPropertyChanged(nameof(ShowSelectedItemVisibility));
+
+                // Auto copiar al portapapeles cuando se selecciona un item
+                if (SelectedItem != null)
+                {
+                    _ = CopyToClipboardAsync(SelectedItem); // fire-and-forget
+                }
             }
         }
 
@@ -222,13 +244,32 @@ namespace Clipboard.ViewModels
         private void FilterItems()
         {
             FilteredItems.Clear();
-            var filtered = string.IsNullOrWhiteSpace(SearchText)
-                ? ClipboardItems
-                : ClipboardItems.Where(item =>
+
+            var items = ClipboardItems.AsEnumerable();
+
+            // Filtrar por categoría si no es "Todos"
+            if (SelectedCategory != "Todos")
+            {
+                items = SelectedCategory switch
+                {
+                    "Texto" => items.Where(item => item.ClipboardType.Name == "Text"),
+                    "Código" => items.Where(item => item.ClipboardType.Name == "Code"),
+                    "Links" => items.Where(item => item.ClipboardType.Name == "Url"),
+                    "Colores" => items.Where(item => item.ClipboardType.Name == "Color"),
+                    "Imágenes" => items.Where(item => item.ClipboardType.Name == "Image"),
+                    _ => items
+                };
+            }
+
+            // Filtrar por texto de búsqueda
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                items = items.Where(item =>
                     item.Content.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
                     (item.Preview?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+            }
 
-            foreach (var item in filtered)
+            foreach (var item in items)
             {
                 FilteredItems.Add(item);
             }
@@ -236,7 +277,7 @@ namespace Clipboard.ViewModels
 
         // Comando para copiar un elemento de vuelta al portapapeles
         [RelayCommand]
-        private async Task CopyToClipboardAsync(ClipboardItemViewModel? item)
+        public async Task CopyToClipboardAsync(ClipboardItemViewModel? item)
         {
             if (item == null) return;
 
@@ -253,7 +294,7 @@ namespace Clipboard.ViewModels
 
         // Comando para alternar favorito
         [RelayCommand]
-        private async Task ToggleFavoriteAsync(ClipboardItemViewModel? item)
+        public async Task ToggleFavoriteAsync(ClipboardItemViewModel? item)
         {
             if (item == null) return;
 
@@ -274,7 +315,7 @@ namespace Clipboard.ViewModels
 
         // Comando para eliminar un elemento
         [RelayCommand]
-        private async Task DeleteItemAsync(ClipboardItemViewModel? item)
+        public async Task DeleteItemAsync(ClipboardItemViewModel? item)
         {
             if (item == null) return;
 
