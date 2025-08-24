@@ -79,6 +79,7 @@ namespace Clipboard
                     services.AddTransient<MainWindowViewModel>();
                     services.AddTransient<ClipboardItemViewModel>();
                     services.AddTransient<FavoritesViewModel>();
+                    services.AddTransient<SettingsViewModel>();
                 })
                 .Build(); // Construye el contenedor
         }

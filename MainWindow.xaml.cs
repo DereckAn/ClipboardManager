@@ -35,7 +35,9 @@ namespace Clipboard
 
             _favoritesPanel = new FavoritesPanel();
             _favoritesPanel.ViewModel = App.GetService<FavoritesViewModel>();
+
             _settingsPanel = new SettingsPanel();
+            _settingsPanel.ViewModel = App.GetService<SettingsViewModel>();
         }
 
         private void OnHistoryButtonClick(object sender, RoutedEventArgs e)
