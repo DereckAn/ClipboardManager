@@ -53,9 +53,12 @@ namespace Clipboard.Services
 
         public bool IsInitialized => _isInitialized;
 
-        public GlobalHotkeyService(ILogger<GlobalHotkeyService> logger)
+        private readonly ISystemTrayService _systemTrayService;
+
+        public GlobalHotkeyService(ILogger<GlobalHotkeyService> logger, ISystemTrayService systemTrayService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _systemTrayService = systemTrayService ?? throw new ArgumentNullException(nameof(systemTrayService));
         }
 
         public async Task InitializeAsync(Window mainWindow)
@@ -233,6 +236,11 @@ namespace Clipboard.Services
             {
                 ProcessHotkeyMessage(wParam.ToInt32());
             }
+            // Interceptar mensajes del tray icon
+            else if (msg == 0x0401) // WM_TRAYICON
+            {
+                ProcessTrayIconMessage(wParam, lParam);
+            }
 
             // Llamar al procesador original
             return CallWindowProc(_originalWindowProc, hWnd, msg, wParam, lParam);
@@ -252,6 +260,30 @@ namespace Clipboard.Services
                 {
                     HotkeyPressed?.Invoke(this, hotkeyString);
                 });
+            }
+        }
+
+        private void ProcessTrayIconMessage(IntPtr wParam, IntPtr lParam)
+        {
+            uint message = (uint)(lParam.ToInt32() & 0xFFFF);
+
+            switch (message)
+            {
+                case 0x0202: // WM_LBUTTONUP (click izquierdo)
+                    _logger.LogInformation("Tray icon left clicked");
+
+                    // Disparar evento usando dispatcher
+                    _dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        // Disparar eventos del SystemTrayService
+                        ((SystemTrayService)_systemTrayService).TriggerTrayIconClicked();
+                    });
+                    break;
+
+                case 0x0205: // WM_RBUTTONUP (click derecho)
+                    _logger.LogInformation("Tray icon right clicked");
+                    // TODO: Mostrar menu contextual
+                    break;
             }
         }
     }

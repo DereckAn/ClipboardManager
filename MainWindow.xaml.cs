@@ -35,6 +35,9 @@ namespace Clipboard
 
             // Inicializar hotkeys (sin await - fire and forget)
             _ = InitializeHotkeyServiceAsync();
+
+            // Inicializar system tray
+            _ = InitializeSystemTrayAsync();
         }
 
         private void InitializePanels()
@@ -155,6 +158,60 @@ namespace Clipboard
             var centerY = (displayArea.WorkArea.Height - 600) / 2;
 
             this.AppWindow.Move(new Windows.Graphics.PointInt32 { X = centerX, Y = centerY });
+        }
+
+        private async Task InitializeSystemTrayAsync()
+        {
+            try
+            {
+                var systemTrayService = App.GetService<ISystemTrayService>();
+
+                // Inicializar con esta ventana
+                systemTrayService.Initialize(this);
+
+                // Suscribirse a eventos
+                systemTrayService.TrayIconClicked += OnTrayIconClicked;
+                systemTrayService.ShowMainWindowRequested += OnShowMainWindowRequested;
+                systemTrayService.ExitRequested += OnExitRequested;
+
+                // Mostrar icono en tray
+                systemTrayService.ShowTrayIcon();
+
+                System.Diagnostics.Debug.WriteLine("✅ System Tray inicializado");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Error inicializando system tray: { ex.Message}");
+            }
+        }
+
+        private void OnTrayIconClicked(object? sender, EventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("🔥 TRAY ICON CLICKED!");
+
+            // Toggle ventana (igual que hotkey)
+            if (this.Visible)
+            {
+                this.AppWindow.Hide();
+            }
+            else
+            {
+                this.AppWindow.Show();
+                this.Activate();
+            }
+        }
+
+        private void OnShowMainWindowRequested(object? sender, EventArgs e)
+        {
+            // Mostrar ventana desde menú contextual
+            this.AppWindow.Show();
+            this.Activate();
+        }
+
+        private void OnExitRequested(object? sender, EventArgs e)
+        {
+            // Cerrar aplicación completamente
+            Application.Current.Exit();
         }
     }
 }
