@@ -1,9 +1,11 @@
 using Clipboard.Services;
 using Clipboard.ViewModels;
 using Clipboard.Views.Controls;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.System;
 
@@ -17,6 +19,29 @@ namespace Clipboard
         private HistoryPanel _historyPanel;
         private FavoritesPanel _favoritesPanel;
         private SettingsPanel _settingsPanel;
+
+        // Win32 API para traer ventana al frente
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        // Constantes Win32
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
+        private const int SW_SHOW = 5;
+
 
         public MainWindow()
         {
@@ -32,6 +57,9 @@ namespace Clipboard
 
             // Mostrar historial por defecto
             ShowHistoryPanel();
+
+            // ✨ NUEVO: Interceptar botón X para ocultar (no cerrar)
+            this.Closed += OnWindowClosed;
 
             // Inicializar hotkeys (sin await - fire and forget)
             _ = InitializeHotkeyServiceAsync();
@@ -141,23 +169,75 @@ namespace Clipboard
             }
             else
             {
-                // Mostrar y traer al frente
-                this.AppWindow.Show();
-                this.Activate();
+                // Mostrar y traer AL FRENTE de forma agresiva
+                BringWindowToFront();
             }
         }
 
         private void ConfigureWindowForPopup()
         {
-            // Tamaño compacto para popup
+            // Configurar tamaño compacto
             this.AppWindow.Resize(new Windows.Graphics.SizeInt32 { Width = 800, Height = 600 });
 
             // Centrar en pantalla
-            var displayArea = Microsoft.UI.Windowing.DisplayArea.Primary;
+            var displayArea = DisplayArea.Primary;
             var centerX = (displayArea.WorkArea.Width - 800) / 2;
             var centerY = (displayArea.WorkArea.Height - 600) / 2;
-
             this.AppWindow.Move(new Windows.Graphics.PointInt32 { X = centerX, Y = centerY });
+
+            // Configurar barra de título como el portapapeles de Windows
+            if (AppWindowTitleBar.IsCustomizationSupported())
+            {
+                var titleBar = this.AppWindow.TitleBar;
+                titleBar.ExtendsContentIntoTitleBar = false; // Mantener barra separada
+
+                // Fondo oscuro semitransparente (similar al portapapeles)
+                titleBar.BackgroundColor = Microsoft.UI.ColorHelper.FromArgb(128, 32, 32, 32); // #80202020
+                titleBar.InactiveBackgroundColor = Microsoft.UI.ColorHelper.FromArgb(128, 32, 32, 32);
+
+                // Ocultar ícono y título
+                titleBar.IconShowOptions = IconShowOptions.HideIconAndSystemMenu;
+                this.Title = "";
+
+                // Estilizar botón X (similar al portapapeles)
+                titleBar.ButtonBackgroundColor = Microsoft.UI.ColorHelper.FromArgb(128, 32, 32, 32); // Igual que la barra
+                titleBar.ButtonHoverBackgroundColor = Microsoft.UI.ColorHelper.FromArgb(255, 80, 80, 80); // Gris claro #FF505050
+                titleBar.ButtonPressedBackgroundColor = Microsoft.UI.ColorHelper.FromArgb(255, 60, 60, 60); // Gris más oscuro #FF3C3C3C
+                titleBar.ButtonForegroundColor = Microsoft.UI.Colors.White; // Ícono X blanco
+                titleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
+                titleBar.ButtonHoverBackgroundColor = Microsoft.UI.ColorHelper.FromArgb(255, 80, 80, 80);
+                titleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
+                titleBar.ButtonInactiveBackgroundColor = Microsoft.UI.ColorHelper.FromArgb(128, 32, 32, 32);
+                titleBar.ButtonInactiveForegroundColor = Microsoft.UI.Colors.Gray;
+
+                // Deshabilitar botones de minimizar y maximizar
+                var presenter = this.AppWindow.Presenter as OverlappedPresenter;
+                if (presenter != null)
+                {
+                    presenter.IsMinimizable = false;
+                    presenter.IsMaximizable = false;
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("❌ Personalización de la barra de título no soportada");
+                // Fallback: Configurar ventana sin bordes
+                ConfigureBorderlessWindow();
+            }
+        }
+
+        private void ConfigureBorderlessWindow()
+        {
+            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            const int GWL_STYLE = -16;
+            const int WS_POPUP = unchecked((int)0x80000000);
+            const int WS_VISIBLE = 0x10000000;
+
+            int style = GetWindowLong(hWnd, GWL_STYLE);
+            style = (style & ~(0x800000 | 0xC00000)) | WS_POPUP | WS_VISIBLE;
+            SetWindowLong(hWnd, GWL_STYLE, style);
+            SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | 0x0020 /* SWP_FRAMECHANGED */);
+            System.Diagnostics.Debug.WriteLine("✅ Ventana configurada como sin bordes");
         }
 
         private async Task InitializeSystemTrayAsync()
@@ -198,8 +278,8 @@ namespace Clipboard
             }
             else
             {
-                this.AppWindow.Show();
-                this.Activate();
+                // Usar el mismo método agresivo
+                BringWindowToFront();
             }
         }
 
@@ -234,6 +314,39 @@ namespace Clipboard
             // Por ahora solo mostrar mensaje
             System.Diagnostics.Debug.WriteLine("Auto-start toggle - pendiente de implementar");
         }
+
+        // Método para traer ventana al frente de forma agresiva
+        private void BringWindowToFront()
+        {
+            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+
+            // 1. Mostrar la ventana
+            this.AppWindow.Show();
+
+            // 2. Activar usando WinUI
+            this.Activate();
+
+            // 3. Técnicas Win32 agresivas
+            ShowWindow(windowHandle, SW_SHOW);
+            SetForegroundWindow(windowHandle);
+
+            // 4. Temporal: Poner como topmost por un momento
+            SetWindowPos(windowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+            // 5. Inmediatamente quitar topmost (para que no se quede siempre encima)
+            SetWindowPos(windowHandle, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        }
+
+        private void OnWindowClosed(object sender, WindowEventArgs e)
+        {
+            // Cancelar el cierre real
+            e.Handled = true;
+
+            // Solo ocultar la ventana (como clipboard de Windows)
+            this.AppWindow.Hide();
+
+            System.Diagnostics.Debug.WriteLine("🔥 VENTANA OCULTA (X presionado) - App sigue corriendo en tray");
+  }
     }
 }
 

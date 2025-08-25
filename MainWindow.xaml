@@ -12,14 +12,14 @@
     mc:Ignorable="d"
     Title="Clipboard Manager">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="{ThemeResource SystemControlAcrylicWindowBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="60"/> <!-- For the header -->
             <RowDefinition Height="*"/>    <!-- For the main content -->
         </Grid.RowDefinitions>
         
         <!-- Navbar global -->
-        <Border Grid.Row="0" Background="{ThemeResource SystemControlBackgroundAccentBrush}">
+        <Border Grid.Row="0" Background="{ThemeResource SystemControlAcrylicWindowBrush}">
             <Grid Margin="16,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/> <!-- Area de busqueda y filtros -->
