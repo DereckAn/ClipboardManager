@@ -280,9 +280,13 @@ namespace Clipboard.Services
                     });
                     break;
 
-                case 0x0205: // WM_RBUTTONUP (click derecho)
+                case 0x0205: // WM_RBUTTONUP (click derecho) 
                     _logger.LogInformation("Tray icon right clicked");
-                    // TODO: Mostrar menu contextual
+
+                    _dispatcherQueue?.TryEnqueue(() =>
+                    {
+                        ((SystemTrayService)_systemTrayService).ShowContextMenu();
+                    });
                     break;
             }
         }

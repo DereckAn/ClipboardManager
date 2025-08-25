@@ -173,6 +173,8 @@ namespace Clipboard
                 systemTrayService.TrayIconClicked += OnTrayIconClicked;
                 systemTrayService.ShowMainWindowRequested += OnShowMainWindowRequested;
                 systemTrayService.ExitRequested += OnExitRequested;
+                systemTrayService.SettingsRequested += OnSettingsRequested;
+                systemTrayService.AutoStartToggleRequested += OnAutoStartToggleRequested;
 
                 // Mostrar icono en tray
                 systemTrayService.ShowTrayIcon();
@@ -212,6 +214,25 @@ namespace Clipboard
         {
             // Cerrar aplicación completamente
             Application.Current.Exit();
+        }
+
+        private void OnSettingsRequested(object? sender, EventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("🔥 SETTINGS REQUESTED FROM TRAY!");
+
+            // Mostrar ventana y cambiar a pestaña de configuración
+            this.AppWindow.Show();
+            this.Activate();
+            ShowSettingsPanel(); // Este método ya existe
+        }
+
+        private void OnAutoStartToggleRequested(object? sender, EventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("🔥 AUTO-START TOGGLE REQUESTED!");
+
+            // TODO: Implementar toggle de auto-start
+            // Por ahora solo mostrar mensaje
+            System.Diagnostics.Debug.WriteLine("Auto-start toggle - pendiente de implementar");
         }
     }
 }

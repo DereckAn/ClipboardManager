@@ -15,5 +15,7 @@ namespace Clipboard.Services
         event EventHandler? TrayIconClicked;
         event EventHandler? ShowMainWindowRequested;
         event EventHandler? ExitRequested;
+        event EventHandler? SettingsRequested;
+        event EventHandler? AutoStartToggleRequested;
     }
 }

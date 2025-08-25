@@ -116,7 +116,7 @@ namespace Clipboard
 
             // 🪟 CREAR Y MOSTRAR VENTANA PRINCIPAL (ya lo tienes)
             m_window = new MainWindow();
-            m_window.Activate();
+            //m_window.Activate();
 
             // 📋 INICIAR MONITOREO DEL CLIPBOARD (NUEVO)
             await StartClipboardMonitoringAsync();
@@ -187,7 +187,5 @@ namespace Clipboard
                 System.Diagnostics.Debug.WriteLine($"❌ Error configurando testing: {ex.Message}");
             }
         }
-
-
     }
 }

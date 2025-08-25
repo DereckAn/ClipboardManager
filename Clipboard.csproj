@@ -13,6 +13,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Content Remove="Assets\pato.ico" />
+  </ItemGroup>
+  <ItemGroup>
+	<EmbeddedResource Include="Assets\pato.ico" />
+  </ItemGroup>
+  <ItemGroup>
     <None Remove="Views\Controls\ClipboardListPanel.xaml" />
     <None Remove="Views\Controls\FavoritesPanel.xaml" />
     <None Remove="Views\Controls\HistoryPanel.xaml" />
