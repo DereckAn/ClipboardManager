@@ -38,7 +38,7 @@ namespace Clipboard.Views.Controls
             get { return (ClipboardItemViewModel)GetValue(SelectedItemProperty); }
             set { SetValue(SelectedItemProperty, value); }
         }
-        public static readonly DependencyProperty SelectedItemProperty = DependencyProperty.Register("SelectedItem", typeof(ClipboardItemViewModel), typeof(ClipboardListPanel), new PropertyMetadata(null, null));
+        public static readonly DependencyProperty SelectedItemProperty = DependencyProperty.Register("SelectedItem", typeof(ClipboardItemViewModel), typeof(ClipboardListPanel), new PropertyMetadata(null, OnSelectedItemChanged));
 
         /// <summary>
         /// EmptyStateIcon - Icono cuando no hay selección
@@ -116,6 +116,23 @@ namespace Clipboard.Views.Controls
         public Visibility SelectedItemVisibility
         {
             get { return SelectedItem != null ? Visibility.Visible : Visibility.Collapsed; }
+        }
+
+        private static void OnSelectedItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ClipboardListPanel panel)
+            {
+                // Notificar que las propiedades de visibilidad han cambiado
+                panel.OnPropertyChanged(nameof(EmptyStateVisibility));
+                panel.OnPropertyChanged(nameof(SelectedItemVisibility));
+            }
+        }
+
+        // Método helper para notificar cambios de propiedades
+        private void OnPropertyChanged(string propertyName)
+        {
+            // Esto fuerza la actualización del binding
+            this.Bindings.Update();
         }
     }
 }
