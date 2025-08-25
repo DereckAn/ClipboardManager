@@ -1,8 +1,11 @@
-using System;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
+using Clipboard.Services;
 using Clipboard.ViewModels;
 using Clipboard.Views.Controls;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Threading.Tasks;
+using Windows.System;
 
 namespace Clipboard
 {
@@ -19,6 +22,9 @@ namespace Clipboard
         {
             this.InitializeComponent();
 
+            // Configurar tamaño para popup
+            ConfigureWindowForPopup();
+
             ViewModel = App.GetService<MainWindowViewModel>();
 
             // Inicializar paneles
@@ -26,6 +32,9 @@ namespace Clipboard
 
             // Mostrar historial por defecto
             ShowHistoryPanel();
+
+            // Inicializar hotkeys (sin await - fire and forget)
+            _ = InitializeHotkeyServiceAsync();
         }
 
         private void InitializePanels()
@@ -84,6 +93,68 @@ namespace Clipboard
             activeButton.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(
                 Microsoft.UI.Colors.White)
             { Opacity = 0.2 };
+        }
+
+        private async Task InitializeHotkeyServiceAsync()
+        {
+            try
+            {
+                var hotkeyService = App.GetService<IGlobalHotkeyService>();
+
+                // Inicializar con esta ventana
+                await hotkeyService.InitializeAsync(this);
+
+                // Suscribirse al evento
+                hotkeyService.HotkeyPressed += OnGlobalHotkeyPressed;
+
+                // Registrar hotkey por defecto (Ctrl+Shift+V)
+                if (hotkeyService.ParseHotkeyString("Ctrl+Shift+V", out uint modifiers, out VirtualKey virtualKey))
+                {
+                    var success = await hotkeyService.RegisterHotkeyAsync("main-hotkey", modifiers, virtualKey);
+                    if (success)
+                    {
+                        System.Diagnostics.Debug.WriteLine("✅ Hotkey Ctrl+Shift+V registrado exitosamente");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("❌ Error registrando hotkey Ctrl+Shift+V");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Error inicializando hotkeys: {ex.Message}");
+            }
+        }
+
+        private void OnGlobalHotkeyPressed(object? sender, string hotkeyId)
+        {
+            System.Diagnostics.Debug.WriteLine($"🔥 HOTKEY PRESIONADO: {hotkeyId}");
+
+            // Si está visible, ocultarla (toggle behavior)
+            if (this.Visible)
+            {
+                this.AppWindow.Hide();
+            }
+            else
+            {
+                // Mostrar y traer al frente
+                this.AppWindow.Show();
+                this.Activate();
+            }
+        }
+
+        private void ConfigureWindowForPopup()
+        {
+            // Tamaño compacto para popup
+            this.AppWindow.Resize(new Windows.Graphics.SizeInt32 { Width = 800, Height = 600 });
+
+            // Centrar en pantalla
+            var displayArea = Microsoft.UI.Windowing.DisplayArea.Primary;
+            var centerX = (displayArea.WorkArea.Width - 800) / 2;
+            var centerY = (displayArea.WorkArea.Height - 600) / 2;
+
+            this.AppWindow.Move(new Windows.Graphics.PointInt32 { X = centerX, Y = centerY });
         }
     }
 }

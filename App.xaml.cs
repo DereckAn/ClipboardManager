@@ -74,6 +74,7 @@ namespace Clipboard
 
                     // 📋 REGISTRAR CLIPBOARD SERVICE (NUEVO)
                     services.AddSingleton<IClipboardService, ClipboardService>();
+                    services.AddSingleton<IGlobalHotkeyService, GlobalHotkeyService>();
 
                     // Registrar VIEWMODELS
                     services.AddTransient<MainWindowViewModel>();
