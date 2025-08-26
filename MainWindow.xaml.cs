@@ -42,7 +42,6 @@ namespace Clipboard
         private const uint SWP_NOSIZE = 0x0001;
         private const int SW_SHOW = 5;
 
-
         public MainWindow()
         {
             this.InitializeComponent();
@@ -58,7 +57,10 @@ namespace Clipboard
             // Mostrar historial por defecto
             ShowHistoryPanel();
 
-            // ✨ NUEVO: Interceptar botón X para ocultar (no cerrar)
+            // Auto - hide
+            ConfigureAutoHide();
+
+            // Interceptar botón X para ocultar (no cerrar)
             this.Closed += OnWindowClosed;
 
             // Inicializar hotkeys (sin await - fire and forget)
@@ -347,6 +349,47 @@ namespace Clipboard
 
             System.Diagnostics.Debug.WriteLine("🔥 VENTANA OCULTA (X presionado) - App sigue corriendo en tray");
   }
+        
+        private void ConfigureAutoHide()
+        {
+            // Detectar cuando la ventana pierde foco (sin timers)
+            this.Activated += OnWindowActivated;
+
+            // Detectar clics en el área de contenido principal
+            if (CurrentContent != null)
+            {
+                CurrentContent.Tapped += OnMainContentTapped;
+            }
+
+            System.Diagnostics.Debug.WriteLine("✅ Auto-hide configurado");
+        }
+
+        // Event handlers para auto-hide
+        private void OnWindowActivated(object sender, Microsoft.UI.Xaml.WindowActivatedEventArgs e)
+        {
+            if (e.WindowActivationState == Microsoft.UI.Xaml.WindowActivationState.Deactivated)
+            {
+                // Ventana perdió foco - ocultarla inmediatamente
+                System.Diagnostics.Debug.WriteLine("🔴 VENTANA DESACTIVADA - Auto-hide");
+                this.AppWindow.Hide();
+            }
+        }
+
+        private void OnMainContentTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            // Mantener foco en la ventana cuando se hace clic en contenido
+            this.Activate();
+        }
+
+        // Event handler para botón X personalizado
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Mismo comportamiento que el X nativo
+            this.AppWindow.Hide();
+            System.Diagnostics.Debug.WriteLine("🔥 VENTANA OCULTA (X personalizado presionado)");
+        }
+
+
     }
 }
 
